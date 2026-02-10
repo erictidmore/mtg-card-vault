@@ -15,7 +15,15 @@
 </p>
 
 <p align="center">
-  <img src="dashboard.png" alt="MTG Card Vault" width="800"/>
+  <img src="dashboard.png" alt="MTG Card Vault — Dashboard" width="800"/>
+</p>
+
+<p align="center">
+  <img src="list-generator.png" alt="MTG Card Vault — List Generator" width="800"/>
+</p>
+
+<p align="center">
+  <img src="manifest.png" alt="MTG Card Vault — Inventory Manifest" width="600"/>
 </p>
 
 ---

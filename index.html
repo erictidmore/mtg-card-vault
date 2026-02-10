@@ -371,9 +371,9 @@
                                     <option value="tix">TIX</option>
                                 </select>
                             </div>
-                             <div class="flex flex-col sm:flex-row gap-2">
-                                <input type="text" id="newCollectionName" class="flex-grow rounded-md px-4 py-2" placeholder="New collection name...">
-                                <button id="createCollectionBtn" class="btn-clean bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md mt-2 sm:mt-0 text-sm">CREATE</button>
+                             <div class="flex flex-col gap-2">
+                                <input type="text" id="newCollectionName" class="w-full rounded-md px-4 py-2" placeholder="New collection name...">
+                                <button id="createCollectionBtn" class="btn-clean bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md text-sm w-full">CREATE</button>
                             </div>
                             <div class="grid grid-cols-3 sm:grid-cols-3 gap-2 mt-4">
                                 <button id="renameCollectionBtn" class="btn-clean bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 px-1 rounded-md text-[10px] tracking-wider border border-slate-200 whitespace-nowrap">RENAME</button>
@@ -1508,10 +1508,6 @@
 
             // --- Import Modal Logic ---
             function openImportModal() {
-                 if (currentSearchResults.length === 0) {
-                    showMessage("Search a set first");
-                    return;
-                }
                 if (!activeCollectionName) {
                     showMessage("Select a collection first");
                     return;
@@ -1524,12 +1520,7 @@
                 importModal.classList.remove('hidden');
             }
 
-            function processImport() {
-                if (currentSearchResults.length === 0) {
-                    importStatus.textContent = "Search a set first";
-                    return;
-                }
-
+            async function processImport() {
                 const text = importTextArea.value;
                 const lines = text.split('\n').filter(line => line.trim() !== '');
                 if (lines.length === 0) {
@@ -1540,72 +1531,126 @@
                 processImportBtn.disabled = true;
                 cancelImportBtn.disabled = true;
                 importErrors.innerHTML = '';
+                importStatus.textContent = "Parsing cards...";
                 let errors = [];
                 let successes = 0;
 
+                // Parse all lines
+                const parsed = [];
                 for (const line of lines) {
-                    if (!line.match(/^\d+\s*x?/)) {
-                        continue;
-                    }
+                    if (!line.match(/^\d+\s*x?/)) continue;
 
                     let processedLine = line;
-
                     const isFoil = processedLine.toLowerCase().includes('(foil)');
-                    if (isFoil) {
-                        processedLine = processedLine.replace(/\(Foil\)/ig, '').trim();
-                    }
+                    if (isFoil) processedLine = processedLine.replace(/\(Foil\)/ig, '').trim();
 
                     const priceMatch = processedLine.match(/\s*-\s*\$[0-9.]+/);
-                    if (priceMatch) {
-                        processedLine = processedLine.substring(0, priceMatch.index).trim();
-                    }
+                    if (priceMatch) processedLine = processedLine.substring(0, priceMatch.index).trim();
 
+                    let setCode = null;
                     let collectorNumber = null;
-                    const collectorMatch = processedLine.match(/\(([^)]+)\)/);
-                    if (collectorMatch) {
-                        const details = collectorMatch[1];
-                        const collectorNumMatch = details.match(/#([a-zA-Z0-9]+)/);
-                        if (collectorNumMatch) {
-                            collectorNumber = collectorNumMatch[1];
-                        }
-                        processedLine = processedLine.substring(0, collectorMatch.index).trim();
+                    const detailMatch = processedLine.match(/\(([^)]+)\)/);
+                    if (detailMatch) {
+                        const details = detailMatch[1];
+                        const setMatch = details.match(/^([A-Za-z0-9]+)/);
+                        if (setMatch) setCode = setMatch[1].toLowerCase();
+                        const numMatch = details.match(/#([a-zA-Z0-9]+)/);
+                        if (numMatch) collectorNumber = numMatch[1];
+                        processedLine = processedLine.substring(0, detailMatch.index).trim();
                     }
 
                     const quantityMatch = processedLine.match(/^(\d+)\s*x?\s*/);
-                    if (!quantityMatch) {
-                        errors.push(`Parse error: "${line}"`);
-                        continue;
-                    }
+                    if (!quantityMatch) { errors.push(`Parse error: "${line}"`); continue; }
 
                     const quantity = parseInt(quantityMatch[1], 10);
                     const cardName = processedLine.substring(quantityMatch[0].length).trim();
+                    if (!cardName) { errors.push(`Missing card name: "${line}"`); continue; }
 
-                    if (!cardName) {
-                        errors.push(`Missing card name: "${line}"`);
-                        continue;
+                    parsed.push({ cardName, quantity, isFoil, setCode, collectorNumber, originalLine: line });
+                }
+
+                // Split into API-fetchable (has set+collector) and fallback (match against search results)
+                const apiFetchable = parsed.filter(p => p.setCode && p.collectorNumber);
+                const fallback = parsed.filter(p => !p.setCode || !p.collectorNumber);
+
+                // Fetch cards from Scryfall Collection API in chunks of 75
+                if (apiFetchable.length > 0) {
+                    const chunks = [];
+                    for (let i = 0; i < apiFetchable.length; i += 75) {
+                        chunks.push(apiFetchable.slice(i, i + 75));
                     }
 
+                    for (let ci = 0; ci < chunks.length; ci++) {
+                        const chunk = chunks[ci];
+                        importStatus.textContent = `Fetching cards from Scryfall... (batch ${ci + 1}/${chunks.length})`;
+
+                        const identifiers = chunk.map(p => ({
+                            set: p.setCode,
+                            collector_number: p.collectorNumber
+                        }));
+
+                        try {
+                            const resp = await fetch('https://api.scryfall.com/cards/collection', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ identifiers })
+                            });
+
+                            if (!resp.ok) throw new Error(`Scryfall API error: ${resp.status}`);
+                            const data = await resp.json();
+
+                            const fetchedCards = data.data || [];
+                            const notFound = data.not_found || [];
+
+                            // Match fetched cards back to parsed entries
+                            for (const p of chunk) {
+                                const card = fetchedCards.find(c =>
+                                    c.set.toLowerCase() === p.setCode &&
+                                    c.collector_number.toLowerCase() === p.collectorNumber.toLowerCase()
+                                );
+                                if (card) {
+                                    addToInventory(card, p.quantity, p.isFoil);
+                                    successes++;
+                                } else {
+                                    errors.push(`Not found: "${p.cardName}" (${p.setCode.toUpperCase()} #${p.collectorNumber})`);
+                                }
+                            }
+
+                            // Respect Scryfall rate limit (100ms between requests)
+                            if (ci < chunks.length - 1) await new Promise(r => setTimeout(r, 150));
+                        } catch (err) {
+                            for (const p of chunk) {
+                                errors.push(`API error: "${p.cardName}" — ${err.message}`);
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: match against current search results
+                for (const p of fallback) {
                     let foundCard;
-                    if (collectorNumber) {
+                    if (p.collectorNumber) {
                         foundCard = currentSearchResults.find(card =>
-                            card.name.toLowerCase() === cardName.toLowerCase() &&
-                            card.collector_number.toLowerCase() === collectorNumber.toLowerCase()
+                            card.name.toLowerCase() === p.cardName.toLowerCase() &&
+                            card.collector_number.toLowerCase() === p.collectorNumber.toLowerCase()
                         );
                     } else {
-                        foundCard = currentSearchResults.find(card => card.name.toLowerCase() === cardName.toLowerCase());
+                        foundCard = currentSearchResults.find(card =>
+                            card.name.toLowerCase() === p.cardName.toLowerCase()
+                        );
                     }
 
                     if (foundCard) {
-                        addToInventory(foundCard, quantity, isFoil);
+                        addToInventory(foundCard, p.quantity, p.isFoil);
                         successes++;
                     } else {
-                        errors.push(`Not found: "${cardName}"`);
+                        errors.push(`Not found: "${p.cardName}" (no set info — search a set first)`);
                     }
                 }
 
                 importStatus.textContent = `Import complete. ${successes} cards added.`;
-                if(errors.length > 0) {
-                    importErrors.innerHTML = `<strong>Errors:</strong><br>` + errors.join('<br>');
+                if (errors.length > 0) {
+                    importErrors.innerHTML = `<strong>Errors (${errors.length}):</strong><br>` + errors.join('<br>');
                 }
 
                 updateInventoryDisplay();
