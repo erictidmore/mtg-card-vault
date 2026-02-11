@@ -237,6 +237,87 @@
         body.light-mode .mana-orb { border-color: rgba(0,0,0,0.12); }
         body.light-mode .mana-orb:hover { border-color: rgba(0,0,0,0.3); }
         body.light-mode .nav-link:not(.active) { color: #94a3b8; }
+
+        /* ===== SEARCH ===== */
+        .search-container { position: relative; max-width: 520px; margin: 0 auto 28px; }
+        .search-input {
+            width: 100%; padding: 12px 18px 12px 42px;
+            border-radius: 14px; border: 1px solid rgba(var(--panel-rgb), 0.2);
+            background: rgba(20, 20, 35, 0.6); color: #e2e8f0;
+            font-family: 'Inter', sans-serif; font-size: 14px;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            outline: none; transition: all 0.25s;
+        }
+        .search-input::placeholder { color: #4a5568; }
+        .search-input:focus {
+            border-color: rgba(var(--accent-rgb), 0.5);
+            box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.12);
+        }
+        .search-icon {
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%); color: #4a5568;
+            font-size: 16px; pointer-events: none;
+        }
+        .autocomplete-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0;
+            margin-top: 4px; border-radius: 12px;
+            background: rgba(18, 18, 30, 0.97); border: 1px solid rgba(var(--panel-rgb), 0.2);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            max-height: 280px; overflow-y: auto; z-index: 30;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        }
+        .autocomplete-dropdown.hidden { display: none; }
+        .autocomplete-item {
+            padding: 10px 16px; cursor: pointer;
+            font-size: 13px; color: #cbd5e1;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: background 0.15s;
+        }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover, .autocomplete-item.highlighted {
+            background: rgba(var(--accent-rgb), 0.1);
+            color: var(--accent-light);
+        }
+        .search-results-section { margin-bottom: 28px; }
+        .search-results-section.hidden { display: none; }
+        .search-clear {
+            position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%); color: #4a5568;
+            font-size: 18px; cursor: pointer; background: none; border: none;
+            transition: color 0.2s; line-height: 1;
+        }
+        .search-clear:hover { color: #ef4444; }
+
+        body.light-mode .search-input { background: rgba(255,255,255,0.8); color: #1e293b; border-color: rgba(0,0,0,0.1); }
+        body.light-mode .search-input::placeholder { color: #94a3b8; }
+        body.light-mode .search-input:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(var(--accent-rgb),0.08); }
+        body.light-mode .autocomplete-dropdown { background: rgba(255,255,255,0.97); border-color: rgba(0,0,0,0.08); box-shadow: 0 12px 40px rgba(0,0,0,0.1); }
+        body.light-mode .autocomplete-item { color: #334155; border-bottom-color: rgba(0,0,0,0.04); }
+        body.light-mode .autocomplete-item:hover, body.light-mode .autocomplete-item.highlighted { background: rgba(var(--accent-rgb),0.08); color: var(--accent); }
+        body.light-mode .search-icon { color: #94a3b8; }
+        body.light-mode .search-clear { color: #94a3b8; }
+
+        .in-collection-badge {
+            display: inline-flex; padding: 1px 5px; border-radius: 3px;
+            font-size: 9px; font-weight: 600; font-family: 'Share Tech Mono', monospace;
+            background: rgba(34, 197, 94, 0.12); color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.2); flex-shrink: 0;
+            white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+        }
+        body.light-mode .in-collection-badge { background: rgba(34,197,94,0.08); color: #16a34a; border-color: rgba(34,197,94,0.15); }
+
+        /* ===== RESPONSIVE IMAGE SCALING ===== */
+        .card-thumb {
+            width: 32px; height: 44px; border-radius: 6px;
+            background-size: cover; background-position: center;
+            flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
+        }
+        @media (min-width: 768px) {
+            .card-thumb { width: 44px; height: 62px; border-radius: 8px; }
+        }
+        @media (min-width: 1280px) {
+            .card-thumb { width: 56px; height: 78px; border-radius: 8px; }
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -250,6 +331,7 @@
                 </a>
                 <nav class="flex items-center gap-2 ml-4">
                     <a href="index.html" class="nav-link">COLLECTION</a>
+                    <a href="portfolio.html" class="nav-link">PORTFOLIO</a>
                     <a href="market.html" class="nav-link active">MARKET</a>
                 </nav>
             </div>
@@ -270,8 +352,9 @@
         <div class="ticker-track flex gap-6 py-2.5 px-4" id="tickerTrack"></div>
     </div>
 
-    <!-- Stats Hero -->
     <div class="container mx-auto px-4 py-6">
+
+        <!-- Market Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="statsBar">
             <div class="stat-card">
                 <p class="stat-card-label">Cards Tracked</p>
@@ -289,6 +372,20 @@
                 <p class="stat-card-label">Highest Price</p>
                 <p class="stat-card-value" id="statHighest">--</p>
             </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-container">
+            <span class="search-icon">⌕</span>
+            <input type="text" id="marketSearchInput" class="search-input" placeholder="Search any card..." autocomplete="off" spellcheck="false">
+            <button id="searchClearBtn" class="search-clear hidden">&times;</button>
+            <div id="autocompleteDropdown" class="autocomplete-dropdown hidden"></div>
+        </div>
+
+        <!-- Search Results -->
+        <div id="searchResultsSection" class="search-results-section hidden">
+            <h3 class="market-section-header">Search Results</h3>
+            <div id="searchResultsGrid" class="space-y-2"></div>
         </div>
 
         <!-- Loading State -->
@@ -313,7 +410,7 @@
             <!-- Most Valuable -->
             <div class="mb-10">
                 <h3 class="market-section-header">Most Valuable</h3>
-                <div id="valuableGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                <div id="valuableGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 lg:gap-6"></div>
             </div>
 
             <!-- All Cards Table -->
@@ -332,7 +429,7 @@
                 <button id="closeCardDetailBtn" class="text-slate-500 hover:text-red-400 text-3xl leading-none ml-4">&times;</button>
             </div>
             <div id="cardDetailBody" class="flex flex-col md:flex-row gap-6">
-                <div class="flex-shrink-0 w-full md:w-64">
+                <div class="flex-shrink-0 w-full md:w-64 lg:w-80">
                     <div class="card-flip-container">
                         <div id="detailFlipInner" class="card-flip-inner">
                             <div class="card-flip-front"><img id="detailCardImage" class="w-full rounded-lg" src=""></div>
@@ -628,6 +725,191 @@
                 if (e.key === 'Escape') document.getElementById('cardDetailModal').classList.add('hidden');
             });
 
+            // ===== SEARCH =====
+            const searchInput = document.getElementById('marketSearchInput');
+            const autoDropdown = document.getElementById('autocompleteDropdown');
+            const searchClearBtn = document.getElementById('searchClearBtn');
+            const searchResultsSection = document.getElementById('searchResultsSection');
+            const searchResultsGrid = document.getElementById('searchResultsGrid');
+            let acDebounce = null;
+            let highlightIdx = -1;
+            let acItems = [];
+
+            searchInput.addEventListener('input', () => {
+                const q = searchInput.value.trim();
+                searchClearBtn.classList.toggle('hidden', q.length === 0);
+                clearTimeout(acDebounce);
+                if (q.length < 2) { autoDropdown.classList.add('hidden'); acItems = []; highlightIdx = -1; return; }
+                acDebounce = setTimeout(() => fetchAutocomplete(q), 250);
+            });
+
+            searchClearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchClearBtn.classList.add('hidden');
+                autoDropdown.classList.add('hidden');
+                searchResultsSection.classList.add('hidden');
+                acItems = [];
+                highlightIdx = -1;
+            });
+
+            async function fetchAutocomplete(q) {
+                try {
+                    const resp = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(q)}`);
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    acItems = data.data || [];
+                    highlightIdx = -1;
+                    if (acItems.length === 0) { autoDropdown.classList.add('hidden'); return; }
+                    autoDropdown.innerHTML = '';
+                    acItems.forEach((name, i) => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-item';
+                        div.textContent = name;
+                        div.addEventListener('click', () => selectAutocomplete(name));
+                        autoDropdown.appendChild(div);
+                    });
+                    autoDropdown.classList.remove('hidden');
+                } catch (e) { /* non-critical */ }
+            }
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (acItems.length === 0) {
+                    if (e.key === 'Enter') { e.preventDefault(); searchByName(searchInput.value.trim()); }
+                    return;
+                }
+                const items = autoDropdown.querySelectorAll('.autocomplete-item');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    highlightIdx = Math.min(highlightIdx + 1, items.length - 1);
+                    items.forEach((el, i) => el.classList.toggle('highlighted', i === highlightIdx));
+                    items[highlightIdx]?.scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    highlightIdx = Math.max(highlightIdx - 1, 0);
+                    items.forEach((el, i) => el.classList.toggle('highlighted', i === highlightIdx));
+                    items[highlightIdx]?.scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (highlightIdx >= 0 && acItems[highlightIdx]) selectAutocomplete(acItems[highlightIdx]);
+                    else searchByName(searchInput.value.trim());
+                } else if (e.key === 'Escape') {
+                    autoDropdown.classList.add('hidden');
+                    acItems = [];
+                    highlightIdx = -1;
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    autoDropdown.classList.add('hidden');
+                    acItems = [];
+                    highlightIdx = -1;
+                }
+            });
+
+            function selectAutocomplete(name) {
+                searchInput.value = name;
+                searchClearBtn.classList.remove('hidden');
+                autoDropdown.classList.add('hidden');
+                acItems = [];
+                highlightIdx = -1;
+                searchByName(name);
+            }
+
+            async function searchByName(name) {
+                if (!name) return;
+                searchResultsGrid.innerHTML = '<div class="flex justify-center py-8"><div class="loader ease-linear rounded-full border-4 h-10 w-10"></div></div>';
+                searchResultsSection.classList.remove('hidden');
+                try {
+                    const resp = await fetch(`https://api.scryfall.com/cards/search?q=!"${encodeURIComponent(name)}"&unique=prints&order=released&dir=desc`);
+                    if (!resp.ok) throw new Error('No results');
+                    const data = await resp.json();
+                    const cards = (data.data || []).slice(0, 30);
+                    renderSearchResults(cards);
+                } catch (e) {
+                    searchResultsGrid.innerHTML = `<p class="text-center text-slate-500 font-mono text-sm py-6">No results found for "${name}"</p>`;
+                }
+            }
+
+            function renderSearchResults(cards) {
+                searchResultsGrid.innerHTML = '';
+                if (cards.length === 0) {
+                    searchResultsGrid.innerHTML = '<p class="text-center text-slate-500 font-mono text-sm py-6">No results found</p>';
+                    return;
+                }
+                cards.forEach(card => {
+                    const price = parseFloat(card.prices?.usd || card.prices?.usd_foil) || 0;
+                    const history = price > 0 ? generateSyntheticHistory(price, 365, card.id) : null;
+                    const weekAgo = history ? (history[history.length - 8] || history[0]) : 0;
+                    const weekChange = weekAgo > 0 ? ((price - weekAgo) / weekAgo * 100) : 0;
+                    const cc = weekChange >= 0 ? 'price-up' : 'price-down';
+                    const arrow = weekChange >= 0 ? '▲' : '▼';
+                    const img = getCardImage(card, 'small');
+                    const sparkData = history ? history.slice(-30) : [];
+                    const row = document.createElement('div');
+                    row.className = 'market-card-row search-result-row';
+                    row.dataset.searchCardId = card.id;
+                    const sBadge = getCollectionBadge(card.id);
+                    row.innerHTML = `
+                        <div class="card-thumb" style="background-image:url('${img}')"></div>
+                        <div class="flex-grow min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-semibold text-slate-200 truncate">${card.name}</p>
+                                ${sBadge}
+                            </div>
+                            <p class="text-[10px] font-mono text-slate-500">${(card.set_name || card.set || '').toUpperCase()} · ${card.collector_number || ''} · ${card.rarity || ''}</p>
+                        </div>
+                        ${sparkData.length > 0 ? `<canvas class="sparkline-canvas" data-history='${JSON.stringify(sparkData)}' data-positive="${weekChange >= 0}" style="width:80px;height:32px;"></canvas>` : '<div style="width:80px"></div>'}
+                        <div class="text-right flex-shrink-0 w-28">
+                            ${price > 0 ? `<p class="text-sm font-bold font-mono text-slate-200">$${price.toFixed(2)}</p><p class="text-xs font-mono ${cc}">${arrow} ${Math.abs(weekChange).toFixed(1)}%</p>` : '<p class="text-xs font-mono text-slate-500">No price</p>'}
+                        </div>`;
+                    searchResultsGrid.appendChild(row);
+                    // Store card ref for click handler
+                    row._cardData = card;
+                });
+
+                // Render sparklines
+                requestAnimationFrame(() => {
+                    searchResultsGrid.querySelectorAll('.sparkline-canvas').forEach(canvas => {
+                        const hd = JSON.parse(canvas.dataset.history);
+                        const pos = canvas.dataset.positive === 'true';
+                        renderSparkline(canvas, hd, pos);
+                    });
+                });
+
+                // Scroll to results
+                searchResultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // ===== COLLECTION BADGE LOOKUP =====
+            const collectionLookup = {};
+
+            function loadCollectionLookup() {
+                const raw = localStorage.getItem('mtgCollections');
+                if (!raw) return;
+                const collections = JSON.parse(raw);
+                const metaRaw = localStorage.getItem('mtgCollectionMeta');
+                const meta = metaRaw ? JSON.parse(metaRaw) : {};
+                Object.entries(collections).forEach(([name, cards]) => {
+                    const isWishlist = (meta[name] || {}).type === 'wishlist';
+                    cards.forEach(card => {
+                        if (!collectionLookup[card.id]) collectionLookup[card.id] = [];
+                        collectionLookup[card.id].push({ collection: name, qty: card.quantity || 1, isWishlist });
+                    });
+                });
+            }
+
+            function getCollectionBadge(cardId) {
+                const entries = collectionLookup[cardId];
+                if (!entries || entries.length === 0) return '';
+                const nonWishlist = entries.filter(e => !e.isWishlist);
+                if (nonWishlist.length === 0) return '';
+                const totalQty = nonWishlist.reduce((sum, e) => sum + e.qty, 0);
+                const firstName = nonWishlist[0].collection;
+                const more = nonWishlist.length > 1 ? ` +${nonWishlist.length - 1}` : '';
+                return `<span class="in-collection-badge" title="${nonWishlist.map(e => e.collection + ' ×' + e.qty).join(', ')}">×${totalQty} ${firstName}${more}</span>`;
+            }
+
             // ===== LOAD MARKET DATA =====
             let marketData = [];
 
@@ -699,8 +981,12 @@
                     const div = document.createElement('div');
                     div.className = 'valuable-card';
                     div.dataset.cardId = item.card.id;
+                    const vBadge = getCollectionBadge(item.card.id);
                     div.innerHTML = `
-                        <img src="${getCardImage(item.card, 'normal')}" class="w-full h-auto" onerror="this.onerror=null;this.src='https://placehold.co/223x310/1a1a2e/8b5cf6?text=No+Image';">
+                        <div class="relative">
+                            <img src="${getCardImage(item.card, 'normal')}" class="w-full h-auto" onerror="this.onerror=null;this.src='https://placehold.co/223x310/1a1a2e/8b5cf6?text=No+Image';">
+                            ${vBadge ? `<div class="absolute top-2 left-2">${vBadge}</div>` : ''}
+                        </div>
                         <div class="p-3">
                             <p class="text-xs font-semibold text-slate-200 truncate">${item.card.name}</p>
                             <div class="flex justify-between items-center mt-1">
@@ -725,11 +1011,15 @@
                     const row = document.createElement('div');
                     row.className = 'market-card-row';
                     row.dataset.cardId = item.card.id;
+                    const allBadge = getCollectionBadge(item.card.id);
                     row.innerHTML = `
                         <span class="text-xs font-mono text-slate-600 w-6 text-right flex-shrink-0">${idx + 1}</span>
-                        <div class="w-8 h-11 rounded bg-cover bg-center flex-shrink-0 border border-white/10" style="background-image:url('${img}')"></div>
+                        <div class="card-thumb" style="background-image:url('${img}')"></div>
                         <div class="flex-grow min-w-0">
-                            <p class="text-sm font-semibold text-slate-200 truncate">${item.card.name}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-semibold text-slate-200 truncate">${item.card.name}</p>
+                                ${allBadge}
+                            </div>
                             <p class="text-[10px] font-mono text-slate-500">${(item.card.set || '').toUpperCase()} · ${item.card.rarity || ''}</p>
                         </div>
                         <canvas class="sparkline-canvas" data-history='${JSON.stringify(sparkData)}' data-positive="${change >= 0}" style="width:80px;height:32px;"></canvas>
@@ -762,10 +1052,14 @@
                     const row = document.createElement('div');
                     row.className = 'market-card-row';
                     row.dataset.cardId = item.card.id;
+                    const badge = getCollectionBadge(item.card.id);
                     row.innerHTML = `
-                        <div class="w-8 h-11 rounded bg-cover bg-center flex-shrink-0 border border-white/10" style="background-image:url('${img}')"></div>
+                        <div class="card-thumb" style="background-image:url('${img}')"></div>
                         <div class="flex-grow min-w-0">
-                            <p class="text-sm font-semibold text-slate-200 truncate">${item.card.name}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-semibold text-slate-200 truncate">${item.card.name}</p>
+                                ${badge}
+                            </div>
                             <p class="text-[10px] font-mono text-slate-500">${(item.card.set || '').toUpperCase()} · ${item.card.rarity || ''}</p>
                         </div>
                         <canvas class="sparkline-canvas" data-history='${JSON.stringify(sparkData)}' data-positive="${change >= 0}" style="width:80px;height:32px;"></canvas>
@@ -779,6 +1073,11 @@
 
             // Click delegation — open card detail from any card row or tile
             document.addEventListener('click', (e) => {
+                const directRow = e.target.closest('.search-result-row');
+                if (directRow && directRow._cardData) {
+                    openCardDetail(directRow._cardData);
+                    return;
+                }
                 const row = e.target.closest('.market-card-row') || e.target.closest('.valuable-card');
                 if (!row) return;
                 const cardId = row.dataset.cardId;
@@ -786,7 +1085,8 @@
                 if (item) openCardDetail(item.card);
             });
 
-            // Load on page ready
+            // Load collection lookup for badges, then market data
+            loadCollectionLookup();
             loadMarket();
         });
     </script>

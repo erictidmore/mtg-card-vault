@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTG Card Vault — Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: #e2e8f0;
+            --accent: #8b5cf6;
+            --accent-light: #c4b5fd;
+            --accent-rgb: 139,92,246;
+            --accent-light-rgb: 196,181,253;
+            --panel-rgb: 120,100,180;
+            --bg: #0a0a0f;
+            transition: background-color 0.6s ease;
+        }
+        h1, h2, h3, button, select { font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 0.03em; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(10, 10, 15, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb), 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb), 0.5); }
+
+        .loader {
+            border-top-color: var(--accent);
+            border-right-color: var(--accent-light);
+            border-bottom-color: var(--accent);
+            border-left-color: var(--accent-light);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ===== MANA THEME SYSTEM ===== */
+        .mana-orb {
+            width: 22px; height: 22px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.1);
+            cursor: pointer; transition: all 0.3s ease;
+            position: relative; flex-shrink: 0;
+        }
+        .mana-orb:hover { transform: scale(1.25); border-color: rgba(255,255,255,0.4); }
+        .mana-orb.active { border-color: var(--accent-light); box-shadow: 0 0 14px 3px rgba(var(--accent-rgb), 0.5); transform: scale(1.15); }
+
+        /* ===== FANTASY LOGO ===== */
+        .logo-main {
+            font-family: 'Cinzel Decorative', serif; font-weight: 900;
+            font-size: clamp(1.4rem, 4vw, 2.5rem); line-height: 1; letter-spacing: 0.02em;
+            background: linear-gradient(180deg, #F6E27A 0%, #D4A843 35%, #B8860B 70%, #8B6914 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; paint-order: stroke fill;
+            -webkit-text-stroke: 1px rgba(120, 60, 0, 0.4);
+            filter: drop-shadow(0 2px 0 #5C3310) drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+        }
+        body.light-mode .logo-main {
+            filter: drop-shadow(0 2px 0 #A0722C) drop-shadow(0 3px 6px rgba(0,0,0,0.2));
+            -webkit-text-stroke: 1px rgba(120, 60, 0, 0.3);
+        }
+
+        .light-toggle {
+            width: 28px; height: 28px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.15); cursor: pointer;
+            font-size: 12px; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05); transition: all 0.3s ease; flex-shrink: 0;
+        }
+        .light-toggle:hover { transform: scale(1.2); border-color: rgba(255,255,255,0.4); }
+        body.light-mode .light-toggle { border-color: rgba(0,0,0,0.15); background: rgba(0,0,0,0.05); }
+
+        /* Nav */
+        .nav-link {
+            font-family: 'Share Tech Mono', monospace; font-size: 11px;
+            letter-spacing: 0.1em; padding: 6px 16px; border-radius: 8px;
+            text-decoration: none; transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .nav-link.active {
+            background: rgba(var(--accent-rgb), 0.15);
+            color: var(--accent-light);
+            border-color: rgba(var(--accent-rgb), 0.3);
+        }
+        .nav-link:not(.active) { color: #64748b; }
+        .nav-link:not(.active):hover {
+            color: var(--accent-light);
+            background: rgba(var(--accent-rgb), 0.06);
+        }
+
+        /* ===== PORTFOLIO STYLES ===== */
+        .portfolio-hero {
+            background: rgba(20, 20, 35, 0.5);
+            border: 1px solid rgba(var(--panel-rgb), 0.15);
+            border-radius: 16px; padding: 24px;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            margin-bottom: 28px;
+        }
+        .portfolio-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: clamp(32px, 5vw, 48px); font-weight: 700;
+            color: #e2e8f0; line-height: 1.1;
+        }
+        .stat-card-mini {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(var(--panel-rgb), 0.1);
+            border-radius: 10px; padding: 10px 14px;
+        }
+        .stat-card-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px; letter-spacing: 0.12em;
+            color: #64748b; text-transform: uppercase;
+        }
+        .stat-card-value-sm {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px; font-weight: 700;
+            color: #e2e8f0; margin-top: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .portfolio-selector {
+            padding: 8px 32px 8px 14px; border-radius: 10px;
+            border: 1px solid rgba(var(--panel-rgb), 0.2);
+            background: rgba(20, 20, 35, 0.6); color: #e2e8f0;
+            font-family: 'Share Tech Mono', monospace; font-size: 12px;
+            letter-spacing: 0.05em; cursor: pointer; outline: none;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center;
+            transition: all 0.2s;
+        }
+        .portfolio-selector:hover { border-color: rgba(var(--accent-rgb), 0.4); }
+        .portfolio-selector:focus { border-color: rgba(var(--accent-rgb), 0.5); box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.1); }
+
+        .market-section-header {
+            font-family: 'Share Tech Mono', monospace; font-size: 12px;
+            letter-spacing: 0.1em; color: #64748b; text-transform: uppercase;
+            margin-bottom: 10px; padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .market-card-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px; border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s; cursor: pointer;
+        }
+        .market-card-row:hover {
+            background: rgba(var(--accent-rgb), 0.06);
+            border-color: rgba(var(--accent-rgb), 0.2);
+        }
+        .price-up { color: #22c55e; }
+        .price-down { color: #ef4444; }
+        .sparkline-canvas { display: block; }
+
+        .qty-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;
+            font-family: 'Share Tech Mono', monospace;
+            background: rgba(var(--accent-rgb), 0.15); color: var(--accent-light);
+            border: 1px solid rgba(var(--accent-rgb), 0.25); flex-shrink: 0;
+        }
+        .foil-badge { color: #fbbf24; font-size: 12px; flex-shrink: 0; }
+        .watchlist-badge {
+            display: inline-flex; padding: 1px 6px; border-radius: 4px;
+            font-size: 9px; font-weight: 700; font-family: 'Share Tech Mono', monospace;
+            background: rgba(251, 191, 36, 0.12); color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.2); flex-shrink: 0;
+            letter-spacing: 0.05em;
+        }
+        .collection-tag {
+            display: inline-flex; padding: 1px 5px; border-radius: 3px;
+            font-size: 9px; font-weight: 600; font-family: 'Share Tech Mono', monospace;
+            background: rgba(var(--accent-rgb), 0.1); color: var(--accent-light);
+            border: 1px solid rgba(var(--accent-rgb), 0.15); flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .watchlist-row { opacity: 0.85; }
+
+        .section-divider {
+            display: flex; align-items: center; gap: 16px;
+            margin: 28px 0 20px; color: #475569;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px; letter-spacing: 0.15em;
+        }
+        .section-divider::before, .section-divider::after {
+            content: ''; flex: 1; height: 1px;
+            background: rgba(255,255,255,0.06);
+        }
+
+        .timeframe-btn {
+            padding: 4px 10px; border-radius: 6px; font-size: 11px;
+            font-family: 'Share Tech Mono', monospace; font-weight: 700;
+            background: rgba(255,255,255,0.05); color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.08); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .timeframe-btn:hover { background: rgba(var(--accent-rgb), 0.15); color: var(--accent-light); }
+        .timeframe-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        .mana-symbol {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 50%;
+            font-size: 11px; font-weight: 700; margin-right: 2px;
+        }
+        .modal-overlay {
+            background: rgba(5, 5, 10, 0.7);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        .card-flip-container { perspective: 800px; }
+        .card-flip-inner { position: relative; width: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .card-flip-inner.flipped { transform: rotateY(180deg); }
+        .card-flip-front, .card-flip-back { backface-visibility: hidden; }
+        .card-flip-back { position: absolute; top: 0; left: 0; width: 100%; transform: rotateY(180deg); }
+
+        .card-thumb {
+            width: 32px; height: 44px; border-radius: 6px;
+            background-size: cover; background-position: center;
+            flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
+        }
+        @media (min-width: 768px) { .card-thumb { width: 44px; height: 62px; border-radius: 8px; } }
+        @media (min-width: 1280px) { .card-thumb { width: 56px; height: 78px; border-radius: 8px; } }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px;
+            color: #475569; font-family: 'Share Tech Mono', monospace;
+        }
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+        .empty-state-text { font-size: 14px; letter-spacing: 0.05em; }
+        .empty-state-sub { font-size: 11px; margin-top: 8px; color: #334155; }
+
+        /* Color distribution bar */
+        .color-bar { height: 6px; border-radius: 3px; overflow: hidden; display: flex; }
+        .color-bar-segment { height: 100%; transition: width 0.4s ease; }
+
+        /* ===== LIGHT MODE ===== */
+        body.light-mode { color: #1e293b; }
+        body.light-mode .portfolio-hero { background: rgba(255,255,255,0.6) !important; }
+        body.light-mode .portfolio-value { color: #1e293b !important; }
+        body.light-mode .stat-card-mini { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.06); }
+        body.light-mode .stat-card-value-sm { color: #1e293b !important; }
+        body.light-mode .portfolio-selector { background: rgba(255,255,255,0.8); color: #1e293b; border-color: rgba(0,0,0,0.1); }
+        body.light-mode .market-card-row { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.06); }
+        body.light-mode .market-card-row:hover { background: rgba(var(--accent-rgb), 0.04); }
+        body.light-mode .market-section-header { border-bottom-color: rgba(0,0,0,0.06); color: #94a3b8; }
+        body.light-mode .section-divider { color: #94a3b8; }
+        body.light-mode .section-divider::before, body.light-mode .section-divider::after { background: rgba(0,0,0,0.06); }
+        body.light-mode .timeframe-btn { background: rgba(0,0,0,0.04); color: #64748b; border-color: rgba(0,0,0,0.08); }
+        body.light-mode .timeframe-btn.active { background: var(--accent); color: #fff; }
+        body.light-mode .modal-overlay { background: rgba(0,0,0,0.25) !important; }
+        body.light-mode #cardDetailModal > div { background: rgba(255,255,255,0.95) !important; }
+        body.light-mode .text-slate-100 { color: #1e293b !important; }
+        body.light-mode .text-slate-200 { color: #334155 !important; }
+        body.light-mode .text-slate-300 { color: #475569 !important; }
+        body.light-mode .text-slate-400 { color: #64748b !important; }
+        body.light-mode .text-slate-500 { color: #94a3b8 !important; }
+        body.light-mode .mana-orb { border-color: rgba(0,0,0,0.12); }
+        body.light-mode .mana-orb:hover { border-color: rgba(0,0,0,0.3); }
+        body.light-mode .nav-link:not(.active) { color: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Header -->
+    <header class="border-b border-white/5">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="flex items-center gap-3 no-underline">
+                    <h1 class="logo-main">MTG Card Vault</h1>
+                </a>
+                <nav class="flex items-center gap-2 ml-4">
+                    <a href="index.html" class="nav-link">COLLECTION</a>
+                    <a href="portfolio.html" class="nav-link active">PORTFOLIO</a>
+                    <a href="market.html" class="nav-link">MARKET</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="mana-orb" data-theme="white" style="background: radial-gradient(circle at 35% 35%, #E8DCCA, #B09470);" title="Plains"></button>
+                <button class="mana-orb" data-theme="blue" style="background: radial-gradient(circle at 35% 35%, #5DADE2, #0E68AB);" title="Island"></button>
+                <button class="mana-orb" data-theme="black" style="background: radial-gradient(circle at 35% 35%, #555, #150B00);" title="Swamp"></button>
+                <button class="mana-orb" data-theme="red" style="background: radial-gradient(circle at 35% 35%, #F1948A, #C0392B);" title="Mountain"></button>
+                <button class="mana-orb" data-theme="green" style="background: radial-gradient(circle at 35% 35%, #58D68D, #00733E);" title="Forest"></button>
+                <span class="text-slate-700 mx-1">|</span>
+                <button id="lightModeToggle" class="light-toggle" title="Toggle light/dark mode">☀</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-6">
+
+        <!-- Portfolio Selector -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <p class="text-[10px] font-mono text-slate-500 tracking-widest mb-1">PORTFOLIO</p>
+                <select id="portfolioSelector" class="portfolio-selector">
+                    <option value="__all__">All Collections</option>
+                </select>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] font-mono text-slate-500 tracking-widest">COLLECTIONS</p>
+                <p id="collectionCountLabel" class="text-sm font-mono text-slate-300 mt-1">--</p>
+            </div>
+        </div>
+
+        <!-- Portfolio Hero -->
+        <div id="portfolioHero" class="portfolio-hero hidden">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                <div>
+                    <p class="text-[10px] font-mono text-slate-500 tracking-widest mb-1">TOTAL VALUE</p>
+                    <p id="portfolioValue" class="portfolio-value">$0.00</p>
+                    <div class="flex items-center gap-3 mt-1">
+                        <span id="portfolioDayChange" class="text-sm font-mono"></span>
+                        <span class="text-slate-600">·</span>
+                        <span id="portfolioWeekChange" class="text-sm font-mono"></span>
+                    </div>
+                </div>
+                <div class="flex gap-1">
+                    <button class="timeframe-btn pf-tf-btn" data-days="7">1W</button>
+                    <button class="timeframe-btn pf-tf-btn active" data-days="30">1M</button>
+                    <button class="timeframe-btn pf-tf-btn" data-days="90">3M</button>
+                    <button class="timeframe-btn pf-tf-btn" data-days="365">1Y</button>
+                </div>
+            </div>
+            <div style="height:220px;"><canvas id="portfolioChart"></canvas></div>
+            <!-- Color Distribution Bar -->
+            <div class="mt-4 mb-3">
+                <p class="text-[10px] font-mono text-slate-500 tracking-widest mb-2">COLOR DISTRIBUTION</p>
+                <div id="colorBar" class="color-bar"></div>
+                <div id="colorLegend" class="flex flex-wrap gap-3 mt-2"></div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                <div class="stat-card-mini">
+                    <p class="stat-card-label">Total Cards</p>
+                    <p class="stat-card-value-sm" id="pfStatCards">--</p>
+                </div>
+                <div class="stat-card-mini">
+                    <p class="stat-card-label">Unique Cards</p>
+                    <p class="stat-card-value-sm" id="pfStatUnique">--</p>
+                </div>
+                <div class="stat-card-mini">
+                    <p class="stat-card-label">Best Performer</p>
+                    <p class="stat-card-value-sm" id="pfStatBest">--</p>
+                </div>
+                <div class="stat-card-mini">
+                    <p class="stat-card-label">Biggest Holding</p>
+                    <p class="stat-card-value-sm" id="pfStatBiggest">--</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Holdings -->
+        <div id="holdingsSection" class="hidden mb-8">
+            <h3 class="market-section-header">
+                <span id="holdingsLabel">Holdings</span>
+                <span id="holdingsCount" class="ml-2 text-slate-600"></span>
+            </h3>
+            <div id="holdingsGrid" class="space-y-2"></div>
+        </div>
+
+        <!-- Watchlist -->
+        <div id="watchlistSection" class="hidden mb-8">
+            <div class="section-divider"><span>WATCHLIST</span></div>
+            <div id="watchlistGrid" class="space-y-2"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state hidden">
+            <div class="empty-state-icon">&#x2727;</div>
+            <p class="empty-state-text">No cards in your collections yet</p>
+            <p class="empty-state-sub">Add cards from the <a href="index.html" class="text-slate-400 hover:text-slate-200 underline" style="text-transform:none;">Collection</a> tab to see your portfolio here</p>
+        </div>
+    </div>
+
+    <!-- Card Detail Modal -->
+    <div id="cardDetailModal" class="modal-overlay hidden fixed inset-0 flex items-center justify-center p-2 sm:p-4" style="z-index:60;">
+        <div class="rounded-2xl p-5 sm:p-8 w-full max-w-3xl max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl" style="background: rgba(15, 15, 25, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+            <div class="flex justify-between items-start mb-4">
+                <h2 id="detailCardName" class="text-2xl font-bold text-slate-100"></h2>
+                <button id="closeCardDetailBtn" class="text-slate-500 hover:text-red-400 text-3xl leading-none ml-4">&times;</button>
+            </div>
+            <div id="cardDetailBody" class="flex flex-col md:flex-row gap-6">
+                <div class="flex-shrink-0 w-full md:w-64 lg:w-80">
+                    <div class="card-flip-container">
+                        <div id="detailFlipInner" class="card-flip-inner">
+                            <div class="card-flip-front"><img id="detailCardImage" class="w-full rounded-lg" src=""></div>
+                            <div class="card-flip-back"><img id="detailCardImageBack" class="w-full rounded-lg" src=""></div>
+                        </div>
+                    </div>
+                    <button id="detailFlipBtn" class="hidden mt-2 w-full bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-1 px-3 rounded-lg text-xs border border-white/10">FLIP CARD</button>
+                </div>
+                <div class="flex-grow space-y-4">
+                    <div id="detailManaCost" class="flex items-center gap-1 flex-wrap"></div>
+                    <p id="detailTypeLine" class="text-sm text-slate-400 font-mono border-b border-white/10 pb-2"></p>
+                    <div id="detailOracleText" class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed"></div>
+                    <div id="detailLegalities" class="flex flex-wrap gap-1 pt-2 border-t border-white/10"></div>
+                    <div id="detailRulings" class="pt-2 border-t border-white/10 space-y-2 hidden">
+                        <p class="text-xs font-mono text-slate-500 tracking-wider">RULINGS</p>
+                        <div id="detailRulingsList" class="space-y-2 text-xs text-slate-400"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="detailPriceSection" class="mt-4 border-t border-white/10 pt-4 hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <span id="detailCurrentPrice" class="text-xl font-bold font-mono text-green-400"></span>
+                        <span id="detailPriceChange" class="ml-2 text-sm font-mono"></span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button class="timeframe-btn detail-tf-btn active" data-days="7">1W</button>
+                        <button class="timeframe-btn detail-tf-btn" data-days="30">1M</button>
+                        <button class="timeframe-btn detail-tf-btn" data-days="90">3M</button>
+                        <button class="timeframe-btn detail-tf-btn" data-days="365">1Y</button>
+                    </div>
+                </div>
+                <div class="flex gap-4 text-xs font-mono text-slate-500 mb-2">
+                    <span>H: <span id="detailPriceHigh" class="text-slate-300"></span></span>
+                    <span>L: <span id="detailPriceLow" class="text-slate-300"></span></span>
+                    <span>AVG: <span id="detailPriceAvg" class="text-slate-300"></span></span>
+                </div>
+                <div style="height:180px;"><canvas id="detailPriceChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ===== THEME SYSTEM =====
+            const manaThemes = {
+                default: { accent: '#8b5cf6', accentRgb: '139,92,246', accentLight: '#c4b5fd', accentLightRgb: '196,181,253', panelRgb: '120,100,180', bg: '#0a0a0f', bgLight: '#F0EDF5' },
+                white:   { accent: '#C2A878', accentRgb: '194,168,120', accentLight: '#DDD0B5', accentLightRgb: '221,208,181', panelRgb: '170,150,120', bg: '#100e08', bgLight: '#F5F0E8' },
+                blue:    { accent: '#1A7BBD', accentRgb: '26,123,189', accentLight: '#7CB5D9', accentLightRgb: '124,181,217', panelRgb: '60,110,170', bg: '#080a10', bgLight: '#EBF0F5' },
+                black:   { accent: '#7C6B8A', accentRgb: '124,107,138', accentLight: '#B0A0C0', accentLightRgb: '176,160,192', panelRgb: '100,90,120', bg: '#09080c', bgLight: '#EDECE8' },
+                red:     { accent: '#C92A2A', accentRgb: '201,42,42', accentLight: '#E88A8A', accentLightRgb: '232,138,138', panelRgb: '170,80,80', bg: '#100808', bgLight: '#F5EDEB' },
+                green:   { accent: '#2D8B57', accentRgb: '45,139,87', accentLight: '#7DC4A0', accentLightRgb: '125,196,160', panelRgb: '60,130,90', bg: '#081008', bgLight: '#ECF5EE' }
+            };
+            let currentThemeName = 'default';
+
+            function applyTheme(name) {
+                const t = manaThemes[name];
+                if (!t) return;
+                currentThemeName = name;
+                const s = document.body.style;
+                const isLight = document.body.classList.contains('light-mode');
+                s.setProperty('--accent', t.accent);
+                s.setProperty('--accent-light', t.accentLight);
+                s.setProperty('--accent-rgb', t.accentRgb);
+                s.setProperty('--accent-light-rgb', t.accentLightRgb);
+                s.setProperty('--panel-rgb', t.panelRgb);
+                s.setProperty('--bg', isLight ? t.bgLight : t.bg);
+                document.querySelectorAll('.mana-orb').forEach(o => o.classList.remove('active'));
+                document.querySelector(`.mana-orb[data-theme="${name}"]`)?.classList.add('active');
+                localStorage.setItem('mtgTheme', name);
+            }
+
+            function toggleLightMode() {
+                const body = document.body;
+                const toggle = document.getElementById('lightModeToggle');
+                body.classList.toggle('light-mode');
+                const isLight = body.classList.contains('light-mode');
+                toggle.textContent = isLight ? '☾' : '☀';
+                localStorage.setItem('mtgLightMode', isLight ? '1' : '0');
+                const t = manaThemes[currentThemeName];
+                if (t) body.style.setProperty('--bg', isLight ? t.bgLight : t.bg);
+            }
+
+            const savedTheme = localStorage.getItem('mtgTheme');
+            if (savedTheme && manaThemes[savedTheme]) applyTheme(savedTheme);
+            if (localStorage.getItem('mtgLightMode') === '1') toggleLightMode();
+
+            document.querySelectorAll('.mana-orb').forEach(orb => {
+                orb.addEventListener('click', () => applyTheme(orb.dataset.theme));
+            });
+            document.getElementById('lightModeToggle').addEventListener('click', toggleLightMode);
+
+            // ===== HELPERS =====
+            function getCardImage(card, size = 'normal') {
+                const ph = size === 'small' ? 'https://placehold.co/146x204/1a1a2e/8b5cf6?text=No+Image' : 'https://placehold.co/223x310/1a1a2e/8b5cf6?text=No+Image';
+                if (card.image_uris && card.image_uris[size]) return card.image_uris[size];
+                if (card.card_faces && card.card_faces.length > 0 && card.card_faces[0].image_uris && card.card_faces[0].image_uris[size]) return card.card_faces[0].image_uris[size];
+                return ph;
+            }
+
+            function renderManaCost(cost) {
+                if (!cost) return '';
+                const colors = { W:'#F9FAF4;color:#333', U:'#0E68AB;color:#fff', B:'#150B00;color:#fff', R:'#D3202A;color:#fff', G:'#00733E;color:#fff', C:'#CAC5C0;color:#333' };
+                return cost.replace(/\{([^}]+)\}/g, (_, sym) => {
+                    const bg = colors[sym] || '#CAC5C0;color:#333';
+                    return `<span class="mana-symbol" style="background:${bg}">${sym}</span>`;
+                });
+            }
+
+            // ===== SYNTHETIC PRICE HISTORY =====
+            function generateSyntheticHistory(currentPrice, days, cardId) {
+                let h = 0;
+                for (let i = 0; i < cardId.length; i++) { h = ((h << 5) - h) + cardId.charCodeAt(i); h |= 0; }
+                let s = Math.abs(h) || 1;
+                function rand() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
+                const points = [currentPrice];
+                let price = currentPrice;
+                for (let i = 1; i <= days; i++) {
+                    const r = rand();
+                    const change = (r - 0.52) * 0.07;
+                    price = price / (1 + change);
+                    price = Math.max(0.01, price);
+                    points.unshift(price);
+                }
+                return points;
+            }
+
+            // ===== SPARKLINE =====
+            function renderSparkline(canvas, data, isPositive) {
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                const w = canvas.offsetWidth; const h = canvas.offsetHeight;
+                canvas.width = w * dpr; canvas.height = h * dpr;
+                ctx.scale(dpr, dpr);
+                const min = Math.min(...data); const max = Math.max(...data);
+                const range = max - min || 1;
+                const color = isPositive ? '#22c55e' : '#ef4444';
+                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+                data.forEach((v, i) => {
+                    const x = (i / (data.length - 1)) * w;
+                    const y = h - ((v - min) / range) * (h - 4) - 2;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke(); ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, isPositive ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)');
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad; ctx.fill();
+            }
+
+            // ===== DETAIL PRICE CHART =====
+            let detailPriceChartInstance = null;
+
+            function showDetailPriceChart(fullHistory, days, currentPrice) {
+                const slice = fullHistory.slice(-(days + 1));
+                const startPrice = slice[0];
+                const change = startPrice > 0 ? ((currentPrice - startPrice) / startPrice * 100) : 0;
+                const isUp = change >= 0;
+                const high = Math.max(...slice); const low = Math.min(...slice);
+                const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+                document.getElementById('detailCurrentPrice').textContent = '$' + currentPrice.toFixed(2);
+                const changeEl = document.getElementById('detailPriceChange');
+                changeEl.textContent = `${isUp ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`;
+                changeEl.className = `ml-2 text-sm font-mono ${isUp ? 'price-up' : 'price-down'}`;
+                document.getElementById('detailPriceHigh').textContent = '$' + high.toFixed(2);
+                document.getElementById('detailPriceLow').textContent = '$' + low.toFixed(2);
+                document.getElementById('detailPriceAvg').textContent = '$' + avg.toFixed(2);
+                const canvas = document.getElementById('detailPriceChart');
+                if (detailPriceChartInstance) detailPriceChartInstance.destroy();
+                const color = isUp ? '#22c55e' : '#ef4444';
+                const bgColor = isUp ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+                detailPriceChartInstance = new Chart(canvas, {
+                    type: 'line',
+                    data: { labels: slice.map((_, i) => i), datasets: [{ data: slice, borderColor: color, backgroundColor: bgColor, fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => '$' + ctx.raw.toFixed(2) } } },
+                        scales: { x: { display: false }, y: { display: true, ticks: { color: '#475569', font: { size: 9 }, callback: v => '$' + v.toFixed(2) }, grid: { color: 'rgba(255,255,255,0.03)' } } },
+                        interaction: { intersect: false, mode: 'index' }
+                    }
+                });
+            }
+
+            // ===== CARD DETAIL =====
+            async function openCardDetail(card) {
+                const detailFlipInner = document.getElementById('detailFlipInner');
+                const detailFlipBtn = document.getElementById('detailFlipBtn');
+                detailFlipInner.classList.remove('flipped');
+                const isDfc = card.card_faces && card.card_faces.length >= 2 && card.card_faces[0].image_uris && card.card_faces[1].image_uris;
+                document.getElementById('detailCardName').textContent = card.name;
+                document.getElementById('detailCardImage').src = isDfc ? card.card_faces[0].image_uris.normal : getCardImage(card, 'normal');
+                if (isDfc) { document.getElementById('detailCardImageBack').src = card.card_faces[1].image_uris.normal; detailFlipBtn.classList.remove('hidden'); }
+                else { detailFlipBtn.classList.add('hidden'); }
+                document.getElementById('detailTypeLine').textContent = isDfc ? card.card_faces[0].type_line : (card.type_line || '');
+                const manaCost = isDfc ? (card.card_faces[0].mana_cost || '') : (card.mana_cost || '');
+                document.getElementById('detailManaCost').innerHTML = renderManaCost(manaCost);
+                document.getElementById('detailOracleText').textContent = isDfc
+                    ? (card.card_faces[0].oracle_text || '') + '\n---\n' + (card.card_faces[1].oracle_text || '')
+                    : (card.oracle_text || '');
+
+                const legalEl = document.getElementById('detailLegalities');
+                legalEl.innerHTML = '';
+                if (card.legalities) {
+                    const fmtMap = {standard:'STD',modern:'MOD',commander:'CMD',pioneer:'PIO',legacy:'LEG',vintage:'VIN',pauper:'PAU',historic:'HIS',brawl:'BRL'};
+                    Object.entries(fmtMap).forEach(([k,v]) => {
+                        const status = card.legalities[k];
+                        let color = 'bg-white/5 text-slate-500 border-white/10';
+                        if (status === 'legal') color = 'bg-green-500/20 text-green-400 border-green-500/30';
+                        else if (status === 'restricted') color = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+                        else if (status === 'banned') color = 'bg-red-500/20 text-red-400 border-red-500/30';
+                        legalEl.innerHTML += `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${color}">${v}</span>`;
+                    });
+                }
+
+                const rulingsDiv = document.getElementById('detailRulings');
+                const rulingsList = document.getElementById('detailRulingsList');
+                rulingsDiv.classList.add('hidden'); rulingsList.innerHTML = '';
+                document.getElementById('cardDetailModal').classList.remove('hidden');
+
+                if (card.rulings_uri) {
+                    try {
+                        const resp = await fetch(card.rulings_uri);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            if (data.data && data.data.length > 0) {
+                                rulingsDiv.classList.remove('hidden');
+                                data.data.slice(0, 10).forEach(r => {
+                                    rulingsList.innerHTML += `<div class="p-2 bg-white/5 rounded text-xs text-slate-400"><span class="text-slate-600 mr-2">${r.published_at}</span>${r.comment}</div>`;
+                                });
+                            }
+                        }
+                    } catch (e) { /* non-critical */ }
+                }
+
+                const cardPrice = parseFloat(card.prices?.usd) || 0;
+                const priceSection = document.getElementById('detailPriceSection');
+                if (cardPrice > 0) {
+                    priceSection.classList.remove('hidden');
+                    const fullHistory = generateSyntheticHistory(cardPrice, 365, card.id);
+                    let activeDays = 30;
+                    showDetailPriceChart(fullHistory, activeDays, cardPrice);
+                    document.querySelectorAll('.detail-tf-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (parseInt(btn.dataset.days) === activeDays) btn.classList.add('active');
+                        btn.onclick = () => {
+                            activeDays = parseInt(btn.dataset.days);
+                            document.querySelectorAll('.detail-tf-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            showDetailPriceChart(fullHistory, activeDays, cardPrice);
+                        };
+                    });
+                } else { priceSection.classList.add('hidden'); }
+            }
+
+            document.getElementById('closeCardDetailBtn').addEventListener('click', () => document.getElementById('cardDetailModal').classList.add('hidden'));
+            document.getElementById('detailFlipBtn').addEventListener('click', () => document.getElementById('detailFlipInner').classList.toggle('flipped'));
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.getElementById('cardDetailModal').classList.add('hidden'); });
+
+            // ===== PORTFOLIO =====
+            let portfolioChartInstance = null;
+            const selector = document.getElementById('portfolioSelector');
+
+            function getCollections() {
+                const raw = localStorage.getItem('mtgCollections');
+                if (!raw) return {};
+                return JSON.parse(raw);
+            }
+
+            function getCollectionMeta() {
+                const raw = localStorage.getItem('mtgCollectionMeta');
+                return raw ? JSON.parse(raw) : {};
+            }
+
+            function populateSelector() {
+                const collections = getCollections();
+                const meta = getCollectionMeta();
+                const names = Object.keys(collections);
+
+                // Clear existing options except "All Collections"
+                while (selector.options.length > 1) selector.remove(1);
+
+                let collectionCount = 0;
+                names.forEach(name => {
+                    const isWishlist = (meta[name] || {}).type === 'wishlist';
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = (isWishlist ? '[W] ' : '') + name;
+                    selector.appendChild(opt);
+                    if (!isWishlist) collectionCount++;
+                });
+
+                document.getElementById('collectionCountLabel').textContent =
+                    `${collectionCount} collection${collectionCount !== 1 ? 's' : ''}` +
+                    (names.length - collectionCount > 0 ? ` · ${names.length - collectionCount} wishlist${names.length - collectionCount !== 1 ? 's' : ''}` : '');
+            }
+
+            function loadPortfolio(selectedCollection) {
+                const collections = getCollections();
+                const meta = getCollectionMeta();
+
+                const holdingsMap = {};
+                const watchlistCards = [];
+
+                const collectionsToShow = selectedCollection === '__all__'
+                    ? Object.entries(collections)
+                    : [[selectedCollection, collections[selectedCollection] || []]];
+
+                collectionsToShow.forEach(([name, cards]) => {
+                    const isWishlist = (meta[name] || {}).type === 'wishlist';
+
+                    cards.forEach(card => {
+                        const price = parseFloat(card.isFoil ? (card.prices?.usd_foil || card.prices?.usd) : (card.prices?.usd || card.prices?.usd_foil)) || 0;
+                        const qty = card.quantity || 1;
+
+                        if (isWishlist) {
+                            watchlistCards.push({ card, price, qty, collections: [name] });
+                        } else {
+                            const key = card.id + (card.isFoil ? '_f' : '_n');
+                            if (holdingsMap[key]) {
+                                holdingsMap[key].totalQty += qty;
+                                holdingsMap[key].collections.push(name);
+                            } else {
+                                holdingsMap[key] = {
+                                    card, price, totalQty: qty, isFoil: card.isFoil,
+                                    collections: [name], totalValue: 0,
+                                    history: price > 0 ? generateSyntheticHistory(price, 365, card.id) : null
+                                };
+                            }
+                        }
+                    });
+                });
+
+                const holdings = Object.values(holdingsMap).map(h => {
+                    h.totalValue = h.price * h.totalQty;
+                    if (h.history) {
+                        const weekAgo = h.history[h.history.length - 8] || h.history[0];
+                        h.weekChange = weekAgo > 0 ? ((h.price - weekAgo) / weekAgo * 100) : 0;
+                    } else { h.weekChange = 0; }
+                    return h;
+                }).sort((a, b) => b.totalValue - a.totalValue);
+
+                const watchlist = watchlistCards.map(w => {
+                    const history = w.price > 0 ? generateSyntheticHistory(w.price, 365, w.card.id) : null;
+                    const weekAgo = history ? (history[history.length - 8] || history[0]) : 0;
+                    const weekChange = weekAgo > 0 ? ((w.price - weekAgo) / weekAgo * 100) : 0;
+                    return { ...w, history, weekChange };
+                }).sort((a, b) => b.price - a.price);
+
+                // Reset UI
+                document.getElementById('portfolioHero').classList.add('hidden');
+                document.getElementById('holdingsSection').classList.add('hidden');
+                document.getElementById('watchlistSection').classList.add('hidden');
+                document.getElementById('emptyState').classList.add('hidden');
+
+                if (holdings.length === 0 && watchlist.length === 0) {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                    return;
+                }
+
+                if (holdings.length > 0) {
+                    renderPortfolioHero(holdings);
+                    renderHoldings(holdings, selectedCollection === '__all__');
+                }
+                if (watchlist.length > 0 && selectedCollection === '__all__') {
+                    renderWatchlist(watchlist);
+                }
+            }
+
+            function buildPortfolioHistory(holdings, days) {
+                const combined = new Array(days + 1).fill(0);
+                holdings.forEach(h => {
+                    if (!h.history || h.price <= 0) return;
+                    const hist = h.history;
+                    const len = hist.length;
+                    const needed = days + 1;
+                    const startIdx = Math.max(0, len - needed);
+                    for (let i = startIdx; i < len; i++) { combined[i - startIdx] += hist[i] * h.totalQty; }
+                });
+                return combined;
+            }
+
+            function renderPortfolioHero(holdings) {
+                const hero = document.getElementById('portfolioHero');
+                hero.classList.remove('hidden');
+
+                const totalValue = holdings.reduce((sum, h) => sum + h.totalValue, 0);
+                const totalCards = holdings.reduce((sum, h) => sum + h.totalQty, 0);
+                const uniqueCards = holdings.length;
+
+                document.getElementById('portfolioValue').textContent = '$' + totalValue.toFixed(2);
+
+                const fullHistory = buildPortfolioHistory(holdings, 365);
+                const currentVal = fullHistory[fullHistory.length - 1];
+
+                const dayAgo = fullHistory[Math.max(0, fullHistory.length - 2)];
+                const dayChange = dayAgo > 0 ? ((currentVal - dayAgo) / dayAgo * 100) : 0;
+                const dayEl = document.getElementById('portfolioDayChange');
+                dayEl.textContent = `${dayChange >= 0 ? '▲' : '▼'} ${Math.abs(dayChange).toFixed(2)}% today`;
+                dayEl.className = `text-sm font-mono ${dayChange >= 0 ? 'price-up' : 'price-down'}`;
+
+                const weekAgo = fullHistory[Math.max(0, fullHistory.length - 8)];
+                const weekChange = weekAgo > 0 ? ((currentVal - weekAgo) / weekAgo * 100) : 0;
+                const weekEl = document.getElementById('portfolioWeekChange');
+                weekEl.textContent = `${weekChange >= 0 ? '▲' : '▼'} ${Math.abs(weekChange).toFixed(2)}% 7d`;
+                weekEl.className = `text-sm font-mono ${weekChange >= 0 ? 'price-up' : 'price-down'}`;
+
+                // Portfolio chart
+                let activeDays = 30;
+                showPortfolioChart(fullHistory, activeDays);
+                document.querySelectorAll('.pf-tf-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (parseInt(btn.dataset.days) === activeDays) btn.classList.add('active');
+                    btn.onclick = () => {
+                        activeDays = parseInt(btn.dataset.days);
+                        document.querySelectorAll('.pf-tf-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        showPortfolioChart(fullHistory, activeDays);
+                    };
+                });
+
+                // Color distribution
+                renderColorBar(holdings);
+
+                // Stats
+                document.getElementById('pfStatCards').textContent = totalCards;
+                document.getElementById('pfStatUnique').textContent = uniqueCards;
+
+                const bestPerformer = [...holdings].filter(h => h.price > 0).sort((a, b) => b.weekChange - a.weekChange)[0];
+                if (bestPerformer) {
+                    document.getElementById('pfStatBest').innerHTML =
+                        `<span class="truncate">${bestPerformer.card.name}</span> <span class="price-up ml-1">▲${bestPerformer.weekChange.toFixed(1)}%</span>`;
+                }
+                const biggest = holdings[0];
+                if (biggest) {
+                    document.getElementById('pfStatBiggest').innerHTML =
+                        `<span class="truncate">${biggest.card.name}</span> <span class="text-slate-400 ml-1">$${biggest.totalValue.toFixed(2)}</span>`;
+                }
+            }
+
+            function renderColorBar(holdings) {
+                const colorCounts = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
+                const colorNames = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green', C: 'Colorless' };
+                const colorHex = { W: '#F9FAF4', U: '#0E68AB', B: '#3D2C2C', R: '#D3202A', G: '#00733E', C: '#CAC5C0' };
+
+                holdings.forEach(h => {
+                    const ci = h.card.color_identity || [];
+                    if (ci.length === 0) { colorCounts.C += h.totalQty; }
+                    else { ci.forEach(c => { if (colorCounts[c] !== undefined) colorCounts[c] += h.totalQty; }); }
+                });
+
+                const total = Object.values(colorCounts).reduce((a, b) => a + b, 0) || 1;
+                const bar = document.getElementById('colorBar');
+                const legend = document.getElementById('colorLegend');
+                bar.innerHTML = '';
+                legend.innerHTML = '';
+
+                Object.entries(colorCounts).forEach(([c, count]) => {
+                    if (count === 0) return;
+                    const pct = (count / total * 100).toFixed(1);
+                    const seg = document.createElement('div');
+                    seg.className = 'color-bar-segment';
+                    seg.style.width = pct + '%';
+                    seg.style.background = colorHex[c];
+                    seg.title = `${colorNames[c]}: ${count} (${pct}%)`;
+                    bar.appendChild(seg);
+
+                    legend.innerHTML += `<span class="flex items-center gap-1 text-[10px] font-mono text-slate-400"><span style="width:8px;height:8px;border-radius:50%;background:${colorHex[c]};display:inline-block;"></span>${colorNames[c]} ${pct}%</span>`;
+                });
+            }
+
+            function showPortfolioChart(fullHistory, days) {
+                const slice = fullHistory.slice(-(days + 1));
+                const startVal = slice[0];
+                const endVal = slice[slice.length - 1];
+                const isUp = endVal >= startVal;
+
+                const canvas = document.getElementById('portfolioChart');
+                if (portfolioChartInstance) portfolioChartInstance.destroy();
+                const color = isUp ? '#22c55e' : '#ef4444';
+                const bgColor = isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+
+                portfolioChartInstance = new Chart(canvas, {
+                    type: 'line',
+                    data: { labels: slice.map((_, i) => i), datasets: [{ data: slice, borderColor: color, backgroundColor: bgColor, fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => '$' + ctx.raw.toFixed(2) } } },
+                        scales: { x: { display: false }, y: { display: true, ticks: { color: '#475569', font: { size: 9 }, callback: v => '$' + v.toFixed(0) }, grid: { color: 'rgba(255,255,255,0.03)' } } },
+                        interaction: { intersect: false, mode: 'index' }
+                    }
+                });
+            }
+
+            function renderHoldings(holdings, showCollectionNames) {
+                const section = document.getElementById('holdingsSection');
+                const grid = document.getElementById('holdingsGrid');
+                section.classList.remove('hidden');
+                grid.innerHTML = '';
+                document.getElementById('holdingsCount').textContent = `(${holdings.length})`;
+
+                holdings.forEach(h => {
+                    const cc = h.weekChange >= 0 ? 'price-up' : 'price-down';
+                    const arrow = h.weekChange >= 0 ? '▲' : '▼';
+                    const img = getCardImage(h.card, 'small');
+                    const sparkData = h.history ? h.history.slice(-30) : [];
+                    const colNames = showCollectionNames ? [...new Set(h.collections)].join(', ') : '';
+                    const colTag = showCollectionNames && h.collections.length > 0
+                        ? `<span class="collection-tag">${h.collections[0]}${h.collections.length > 1 ? ' +' + (h.collections.length - 1) : ''}</span>` : '';
+
+                    const row = document.createElement('div');
+                    row.className = 'market-card-row holding-row';
+                    row._cardData = h.card;
+                    row.innerHTML = `
+                        <div class="card-thumb" style="background-image:url('${img}')"></div>
+                        <div class="flex-grow min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-semibold text-slate-200 truncate">${h.card.name}</p>
+                                <span class="qty-badge">×${h.totalQty}</span>
+                                ${h.isFoil ? '<span class="foil-badge">✦</span>' : ''}
+                                ${colTag}
+                            </div>
+                            <p class="text-[10px] font-mono text-slate-500">${(h.card.set || '').toUpperCase()} · ${h.card.rarity || ''}${colNames && !colTag ? ' · ' + colNames : ''}</p>
+                        </div>
+                        ${sparkData.length > 0 ? `<canvas class="sparkline-canvas" data-history='${JSON.stringify(sparkData)}' data-positive="${h.weekChange >= 0}" style="width:80px;height:32px;"></canvas>` : '<div style="width:80px"></div>'}
+                        <div class="text-right flex-shrink-0 w-28">
+                            <p class="text-sm font-bold font-mono text-slate-200">$${h.totalValue.toFixed(2)}</p>
+                            <p class="text-xs font-mono ${cc}">${arrow} ${Math.abs(h.weekChange).toFixed(1)}%</p>
+                        </div>`;
+                    grid.appendChild(row);
+                });
+
+                requestAnimationFrame(() => {
+                    grid.querySelectorAll('.sparkline-canvas').forEach(canvas => {
+                        const hd = JSON.parse(canvas.dataset.history);
+                        renderSparkline(canvas, hd, canvas.dataset.positive === 'true');
+                    });
+                });
+            }
+
+            function renderWatchlist(watchlist) {
+                const section = document.getElementById('watchlistSection');
+                const grid = document.getElementById('watchlistGrid');
+                section.classList.remove('hidden');
+                grid.innerHTML = '';
+
+                watchlist.forEach(w => {
+                    const cc = w.weekChange >= 0 ? 'price-up' : 'price-down';
+                    const arrow = w.weekChange >= 0 ? '▲' : '▼';
+                    const img = getCardImage(w.card, 'small');
+                    const sparkData = w.history ? w.history.slice(-30) : [];
+
+                    const row = document.createElement('div');
+                    row.className = 'market-card-row watchlist-row';
+                    row._cardData = w.card;
+                    row.innerHTML = `
+                        <div class="card-thumb" style="background-image:url('${img}'); opacity:0.7;"></div>
+                        <div class="flex-grow min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-semibold text-slate-300 truncate">${w.card.name}</p>
+                                <span class="watchlist-badge">WANTED</span>
+                            </div>
+                            <p class="text-[10px] font-mono text-slate-500">${(w.card.set || '').toUpperCase()} · ${w.card.rarity || ''}</p>
+                        </div>
+                        ${sparkData.length > 0 ? `<canvas class="sparkline-canvas" data-history='${JSON.stringify(sparkData)}' data-positive="${w.weekChange >= 0}" style="width:80px;height:32px;"></canvas>` : '<div style="width:80px"></div>'}
+                        <div class="text-right flex-shrink-0 w-28">
+                            ${w.price > 0 ? `<p class="text-sm font-bold font-mono text-slate-300">$${w.price.toFixed(2)}</p><p class="text-xs font-mono ${cc}">${arrow} ${Math.abs(w.weekChange).toFixed(1)}%</p>` : '<p class="text-xs font-mono text-slate-500">No price</p>'}
+                        </div>`;
+                    grid.appendChild(row);
+                });
+
+                requestAnimationFrame(() => {
+                    grid.querySelectorAll('.sparkline-canvas').forEach(canvas => {
+                        const hd = JSON.parse(canvas.dataset.history);
+                        renderSparkline(canvas, hd, canvas.dataset.positive === 'true');
+                    });
+                });
+            }
+
+            // Click delegation
+            document.addEventListener('click', (e) => {
+                const row = e.target.closest('.holding-row') || e.target.closest('.watchlist-row');
+                if (row && row._cardData) { openCardDetail(row._cardData); return; }
+            });
+
+            // Selector change
+            selector.addEventListener('change', () => {
+                loadPortfolio(selector.value);
+            });
+
+            // Init
+            populateSelector();
+            loadPortfolio('__all__');
+        });
+    </script>
+</body>
+</html>
