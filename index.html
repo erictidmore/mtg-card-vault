@@ -573,6 +573,131 @@
         .hover\:text-purple-400:hover { color: var(--accent-light) !important; }
         .hover\:border-purple-500\/40:hover { border-color: rgba(var(--accent-rgb), 0.4) !important; }
         .bg-purple-500 { background-color: var(--accent) !important; }
+
+        /* Light mode toggle */
+        .light-toggle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.15);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .light-toggle:hover {
+            transform: scale(1.2);
+            border-color: rgba(255,255,255,0.4);
+        }
+        body.light-mode .light-toggle {
+            border-color: rgba(0,0,0,0.15);
+            background: rgba(0,0,0,0.05);
+        }
+        body.light-mode .light-toggle:hover {
+            border-color: rgba(0,0,0,0.3);
+        }
+
+        /* ===== LIGHT MODE ===== */
+        body.light-mode {
+            color: #1e293b;
+            transition: background-color 0.6s ease, color 0.4s ease;
+        }
+
+        /* Panels & Cards */
+        body.light-mode .clean-panel {
+            background: rgba(255, 255, 255, 0.75) !important;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06) !important;
+        }
+        body.light-mode .card {
+            background: rgba(255, 255, 255, 0.8) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        /* Inputs */
+        body.light-mode input[type="text"],
+        body.light-mode input[type="number"],
+        body.light-mode select,
+        body.light-mode textarea {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-color: rgba(0, 0, 0, 0.12) !important;
+            color: #1e293b !important;
+        }
+        body.light-mode input[type="text"]::placeholder,
+        body.light-mode textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+        body.light-mode select option {
+            background: #fff;
+            color: #1e293b;
+        }
+        body.light-mode .inline-qty {
+            background: rgba(255,255,255,0.9) !important;
+            border-color: rgba(0,0,0,0.12) !important;
+            color: #1e293b !important;
+        }
+
+        /* Scrollbar */
+        body.light-mode ::-webkit-scrollbar-track { background: rgba(0,0,0,0.03) !important; }
+
+        /* Modals */
+        body.light-mode .modal-overlay { background: rgba(0, 0, 0, 0.25) !important; }
+        body.light-mode #importModal > div,
+        body.light-mode #visualViewContent,
+        body.light-mode #ebayViewModal > div,
+        body.light-mode #cardDetailModal > div,
+        body.light-mode #statsModal > div,
+        body.light-mode #dupesModal > div {
+            background: rgba(255, 255, 255, 0.95) !important;
+        }
+        body.light-mode #photoStudioModal > div {
+            background: rgba(245, 245, 240, 0.98) !important;
+        }
+
+        /* Checklist */
+        body.light-mode .checklist-item { border-bottom-color: rgba(0,0,0,0.08) !important; color: #475569; }
+        body.light-mode .checklist-item:hover { background-color: rgba(var(--accent-rgb), 0.06) !important; color: #1e293b; }
+
+        /* Text color flips */
+        body.light-mode .text-slate-100 { color: #1e293b !important; }
+        body.light-mode .text-slate-200 { color: #334155 !important; }
+        body.light-mode .text-slate-300 { color: #475569 !important; }
+        body.light-mode .text-slate-400 { color: #64748b !important; }
+        body.light-mode .text-slate-500 { color: #94a3b8 !important; }
+        body.light-mode .text-slate-600 { color: #94a3b8 !important; }
+
+        /* Background utility flips */
+        body.light-mode .bg-white\/5 { background-color: rgba(0,0,0,0.03) !important; }
+        body.light-mode .bg-white\/10 { background-color: rgba(0,0,0,0.05) !important; }
+        body.light-mode .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.07) !important; }
+
+        /* Border flips */
+        body.light-mode .border-white\/10 { border-color: rgba(0,0,0,0.08) !important; }
+        body.light-mode .border-t-white\/10 { border-top-color: rgba(0,0,0,0.08) !important; }
+        body.light-mode .border-white\/5 { border-color: rgba(0,0,0,0.05) !important; }
+
+        /* Mana orbs in light mode */
+        body.light-mode .mana-orb { border-color: rgba(0,0,0,0.12); }
+        body.light-mode .mana-orb:hover { border-color: rgba(0,0,0,0.3); }
+
+        /* Autocomplete & dropdowns */
+        body.light-mode .autocomplete-dropdown { background: rgba(255,255,255,0.97) !important; }
+        body.light-mode .autocomplete-dropdown .ac-item { color: #475569 !important; }
+        body.light-mode .autocomplete-dropdown .ac-item:hover { background: rgba(var(--accent-rgb), 0.08) !important; }
+        body.light-mode .export-dropdown { background: rgba(255,255,255,0.97) !important; }
+        body.light-mode .export-dropdown button { color: #475569 !important; }
+        body.light-mode .export-dropdown button:hover { background: rgba(var(--accent-rgb), 0.08) !important; }
+
+        /* Ebay view body */
+        body.light-mode #ebay-view-body { background: rgba(0,0,0,0.02) !important; }
+
+        /* Stat bars */
+        body.light-mode .stat-bar-track { background: rgba(0,0,0,0.06) !important; }
+        body.light-mode .stat-bar-label { color: #64748b !important; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -581,12 +706,14 @@
         <header class="text-center mb-6 sm:mb-10 relative">
             <h1 class="text-3xl sm:text-5xl md:text-6xl font-bold text-slate-100 tracking-tight">MTG Card Vault</h1>
             <p class="text-purple-400 mt-2 font-mono text-sm tracking-widest">COLLECTION MANAGER</p>
-            <div class="flex justify-center gap-3 mt-3">
+            <div class="flex justify-center items-center gap-3 mt-3">
                 <button class="mana-orb" data-theme="white" style="background: radial-gradient(circle at 35% 35%, #E8DCCA, #B09470);" title="Plains"></button>
                 <button class="mana-orb" data-theme="blue" style="background: radial-gradient(circle at 35% 35%, #5DADE2, #0E68AB);" title="Island"></button>
                 <button class="mana-orb" data-theme="black" style="background: radial-gradient(circle at 35% 35%, #555, #150B00);" title="Swamp"></button>
                 <button class="mana-orb" data-theme="red" style="background: radial-gradient(circle at 35% 35%, #F1948A, #C0392B);" title="Mountain"></button>
                 <button class="mana-orb" data-theme="green" style="background: radial-gradient(circle at 35% 35%, #58D68D, #00733E);" title="Forest"></button>
+                <span class="text-slate-600 mx-1">|</span>
+                <button id="lightModeToggle" class="light-toggle" title="Toggle light/dark mode">☀</button>
             </div>
             <p class="text-slate-600 mt-2 font-mono text-[10px] tracking-wider">CTRL+Z UNDO · CTRL+SHIFT+Z REDO · CTRL+S SAVE · ESC CLOSE · ←→ PAGINATE</p>
         </header>
@@ -1042,32 +1169,48 @@
 
             // Mana Theme System
             const manaThemes = {
-                default: { accent: '#8b5cf6', accentRgb: '139,92,246', accentLight: '#c4b5fd', accentLightRgb: '196,181,253', panelRgb: '120,100,180', bg: '#0a0a0f' },
-                white:   { accent: '#C2A878', accentRgb: '194,168,120', accentLight: '#DDD0B5', accentLightRgb: '221,208,181', panelRgb: '170,150,120', bg: '#100e08' },
-                blue:    { accent: '#1A7BBD', accentRgb: '26,123,189', accentLight: '#7CB5D9', accentLightRgb: '124,181,217', panelRgb: '60,110,170', bg: '#080a10' },
-                black:   { accent: '#7C6B8A', accentRgb: '124,107,138', accentLight: '#B0A0C0', accentLightRgb: '176,160,192', panelRgb: '100,90,120', bg: '#09080c' },
-                red:     { accent: '#C92A2A', accentRgb: '201,42,42', accentLight: '#E88A8A', accentLightRgb: '232,138,138', panelRgb: '170,80,80', bg: '#100808' },
-                green:   { accent: '#2D8B57', accentRgb: '45,139,87', accentLight: '#7DC4A0', accentLightRgb: '125,196,160', panelRgb: '60,130,90', bg: '#081008' }
+                default: { accent: '#8b5cf6', accentRgb: '139,92,246', accentLight: '#c4b5fd', accentLightRgb: '196,181,253', panelRgb: '120,100,180', bg: '#0a0a0f', bgLight: '#F0EDF5' },
+                white:   { accent: '#C2A878', accentRgb: '194,168,120', accentLight: '#DDD0B5', accentLightRgb: '221,208,181', panelRgb: '170,150,120', bg: '#100e08', bgLight: '#F5F0E8' },
+                blue:    { accent: '#1A7BBD', accentRgb: '26,123,189', accentLight: '#7CB5D9', accentLightRgb: '124,181,217', panelRgb: '60,110,170', bg: '#080a10', bgLight: '#EBF0F5' },
+                black:   { accent: '#7C6B8A', accentRgb: '124,107,138', accentLight: '#B0A0C0', accentLightRgb: '176,160,192', panelRgb: '100,90,120', bg: '#09080c', bgLight: '#EDECE8' },
+                red:     { accent: '#C92A2A', accentRgb: '201,42,42', accentLight: '#E88A8A', accentLightRgb: '232,138,138', panelRgb: '170,80,80', bg: '#100808', bgLight: '#F5EDEB' },
+                green:   { accent: '#2D8B57', accentRgb: '45,139,87', accentLight: '#7DC4A0', accentLightRgb: '125,196,160', panelRgb: '60,130,90', bg: '#081008', bgLight: '#ECF5EE' }
             };
+            let currentThemeName = 'default';
 
             function applyTheme(name) {
                 const t = manaThemes[name];
                 if (!t) return;
+                currentThemeName = name;
                 const s = document.body.style;
+                const isLight = document.body.classList.contains('light-mode');
                 s.setProperty('--accent', t.accent);
                 s.setProperty('--accent-light', t.accentLight);
                 s.setProperty('--accent-rgb', t.accentRgb);
                 s.setProperty('--accent-light-rgb', t.accentLightRgb);
-                s.setProperty('--panel-rgb', t.panelRgb);
-                s.setProperty('--bg', t.bg);
+                s.setProperty('--panel-rgb', isLight ? t.panelRgb : t.panelRgb);
+                s.setProperty('--bg', isLight ? t.bgLight : t.bg);
                 document.querySelectorAll('.mana-orb').forEach(o => o.classList.remove('active'));
                 document.querySelector(`.mana-orb[data-theme="${name}"]`)?.classList.add('active');
                 localStorage.setItem('mtgTheme', name);
             }
 
-            // Apply saved theme
+            function toggleLightMode() {
+                const body = document.body;
+                const toggle = document.getElementById('lightModeToggle');
+                body.classList.toggle('light-mode');
+                const isLight = body.classList.contains('light-mode');
+                toggle.textContent = isLight ? '☾' : '☀';
+                localStorage.setItem('mtgLightMode', isLight ? '1' : '0');
+                // Re-apply theme to swap bg
+                const t = manaThemes[currentThemeName];
+                if (t) body.style.setProperty('--bg', isLight ? t.bgLight : t.bg);
+            }
+
+            // Apply saved theme + light mode
             const savedTheme = localStorage.getItem('mtgTheme');
             if (savedTheme && manaThemes[savedTheme]) applyTheme(savedTheme);
+            if (localStorage.getItem('mtgLightMode') === '1') toggleLightMode();
 
             // Load collections from local storage on page load
             loadCollections();
@@ -1156,10 +1299,11 @@
             });
             copyEbayBtn.addEventListener('click', copyEbayListToClipboard);
 
-            // Mana Theme Orbs
+            // Mana Theme Orbs + Light Mode Toggle
             document.querySelectorAll('.mana-orb').forEach(orb => {
                 orb.addEventListener('click', () => applyTheme(orb.dataset.theme));
             });
+            document.getElementById('lightModeToggle').addEventListener('click', toggleLightMode);
 
             // New Feature Listeners
             statsBtn.addEventListener('click', openStatsModal);
