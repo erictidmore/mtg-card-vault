@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -574,6 +574,40 @@
         .hover\:border-purple-500\/40:hover { border-color: rgba(var(--accent-rgb), 0.4) !important; }
         .bg-purple-500 { background-color: var(--accent) !important; }
 
+        /* ===== FANTASY LOGO ===== */
+        .logo-main {
+            font-family: 'Cinzel Decorative', serif;
+            font-weight: 900;
+            font-size: clamp(2.2rem, 7vw, 4.5rem);
+            line-height: 1;
+            letter-spacing: 0.02em;
+            background: linear-gradient(180deg, #F6E27A 0%, #D4A843 35%, #B8860B 70%, #8B6914 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 1.5px rgba(120, 60, 0, 0.4);
+            filter: drop-shadow(0 2px 0 #5C3310) drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+            position: relative;
+        }
+        .logo-sub {
+            font-family: 'Cinzel Decorative', serif;
+            font-weight: 700;
+            font-size: clamp(0.7rem, 2.2vw, 1.15rem);
+            letter-spacing: 0.25em;
+            color: var(--accent-light);
+            text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.4);
+            margin-top: 2px;
+        }
+        body.light-mode .logo-main {
+            filter: drop-shadow(0 2px 0 #A0722C) drop-shadow(0 3px 6px rgba(0,0,0,0.2));
+            -webkit-text-stroke: 1.5px rgba(120, 60, 0, 0.3);
+        }
+        body.light-mode .logo-sub {
+            color: var(--accent);
+            text-shadow: none;
+        }
+
         /* Light mode toggle */
         .light-toggle {
             width: 32px;
@@ -651,7 +685,8 @@
         body.light-mode #ebayViewModal > div,
         body.light-mode #cardDetailModal > div,
         body.light-mode #statsModal > div,
-        body.light-mode #dupesModal > div {
+        body.light-mode #dupesModal > div,
+        body.light-mode #marketModal > div {
             background: rgba(255, 255, 255, 0.95) !important;
         }
         body.light-mode #photoStudioModal > div {
@@ -698,14 +733,124 @@
         /* Stat bars */
         body.light-mode .stat-bar-track { background: rgba(0,0,0,0.06) !important; }
         body.light-mode .stat-bar-label { color: #64748b !important; }
+
+        /* ===== MARKET DASHBOARD ===== */
+        .market-ticker {
+            background: rgba(10, 10, 18, 0.95);
+            overflow: hidden;
+        }
+        .ticker-track {
+            animation: tickerScroll 40s linear infinite;
+            white-space: nowrap;
+        }
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            padding: 0 16px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+        }
+        .market-card-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .market-card-row:hover {
+            background: rgba(var(--accent-rgb), 0.06);
+            border-color: rgba(var(--accent-rgb), 0.2);
+        }
+        .price-up { color: #22c55e; }
+        .price-down { color: #ef4444; }
+        .sparkline-canvas { display: block; }
+        .timeframe-btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: 700;
+            background: rgba(255,255,255,0.05);
+            color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .timeframe-btn:hover {
+            background: rgba(var(--accent-rgb), 0.15);
+            color: var(--accent-light);
+        }
+        .timeframe-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .market-section-header {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .portfolio-change {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .portfolio-change.up {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .portfolio-change.down {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        body.light-mode .market-card-row {
+            background: rgba(0,0,0,0.02);
+            border-color: rgba(0,0,0,0.06);
+        }
+        body.light-mode .market-card-row:hover {
+            background: rgba(var(--accent-rgb), 0.04);
+        }
+        body.light-mode .market-ticker {
+            background: rgba(245, 245, 250, 0.95);
+        }
+        body.light-mode .timeframe-btn {
+            background: rgba(0,0,0,0.04);
+            color: #64748b;
+            border-color: rgba(0,0,0,0.08);
+        }
+        body.light-mode .timeframe-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
+        body.light-mode .market-section-header {
+            border-bottom-color: rgba(0,0,0,0.06);
+        }
     </style>
 </head>
 <body class="min-h-screen">
 
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-6 sm:mb-10 relative">
-            <h1 class="text-3xl sm:text-5xl md:text-6xl font-bold text-slate-100 tracking-tight">MTG Card Vault</h1>
-            <p class="text-purple-400 mt-2 font-mono text-sm tracking-widest">COLLECTION MANAGER</p>
+            <h1 class="logo-main">MTG Card Vault</h1>
+            <p class="logo-sub">Collection Manager</p>
             <div class="flex justify-center items-center gap-3 mt-3">
                 <button class="mana-orb" data-theme="white" style="background: radial-gradient(circle at 35% 35%, #E8DCCA, #B09470);" title="Plains"></button>
                 <button class="mana-orb" data-theme="blue" style="background: radial-gradient(circle at 35% 35%, #5DADE2, #0E68AB);" title="Island"></button>
@@ -850,7 +995,8 @@
                                     <button id="createCollectionBtn" class="btn-clean bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-xl text-sm flex-1">CREATE</button>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-3 sm:grid-cols-3 gap-2 mt-4">
+                            <button id="marketBtn" class="btn-clean w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold py-3 px-4 rounded-xl text-xs border border-green-500/30 whitespace-nowrap tracking-wider mt-4">▲ MTG MARKET</button>
+                            <div class="grid grid-cols-3 sm:grid-cols-3 gap-2 mt-2">
                                 <button id="renameCollectionBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">RENAME</button>
                                 <button id="updatePricesBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">SYNC</button>
                                 <button id="importTxtBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">IMPORT</button>
@@ -876,7 +1022,10 @@
                         <div class="bg-white/5 rounded-xl p-4 border border-white/10 mb-4 font-mono">
                             <div class="flex justify-between items-center mb-1">
                                 <p class="text-slate-500 text-xs">TOTAL VALUE</p>
-                                <p id="totalValue" class="text-xl font-bold text-green-400">$0.00</p>
+                                <div class="flex items-center gap-2">
+                                    <p id="totalValue" class="text-xl font-bold text-green-400">$0.00</p>
+                                    <span id="portfolioChange" class="portfolio-change hidden"></span>
+                                </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <p class="text-slate-500 text-xs">TOTAL CARDS</p>
@@ -1022,6 +1171,26 @@
                     </div>
                 </div>
             </div>
+            <div id="detailPriceSection" class="mt-4 border-t border-white/10 pt-4 hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <span id="detailCurrentPrice" class="text-xl font-bold font-mono text-green-400"></span>
+                        <span id="detailPriceChange" class="ml-2 text-sm font-mono"></span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button class="timeframe-btn active" data-days="7">1W</button>
+                        <button class="timeframe-btn" data-days="30">1M</button>
+                        <button class="timeframe-btn" data-days="90">3M</button>
+                        <button class="timeframe-btn" data-days="365">1Y</button>
+                    </div>
+                </div>
+                <div class="flex gap-4 text-xs font-mono text-slate-500 mb-2">
+                    <span>H: <span id="detailPriceHigh" class="text-slate-300"></span></span>
+                    <span>L: <span id="detailPriceLow" class="text-slate-300"></span></span>
+                    <span>AVG: <span id="detailPriceAvg" class="text-slate-300"></span></span>
+                </div>
+                <div style="height:160px;"><canvas id="detailPriceChart"></canvas></div>
+            </div>
         </div>
     </div>
 
@@ -1047,6 +1216,23 @@
                 <button id="closeDupesBtn" class="text-slate-500 hover:text-red-400 text-3xl leading-none">&times;</button>
             </div>
             <div id="dupesBody"></div>
+        </div>
+    </div>
+
+    <!-- Market Dashboard Modal -->
+    <div id="marketModal" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+        <div class="rounded-2xl w-full max-w-6xl h-[95vh] sm:h-[90vh] flex flex-col border border-white/10 shadow-2xl overflow-hidden" style="background: rgba(10, 10, 18, 0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+            <div class="flex justify-between items-center p-4 sm:p-6 border-b border-white/10 flex-shrink-0">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-100 tracking-wider">MTG Market</h2>
+                    <p class="text-[10px] font-mono text-slate-500 tracking-wider">SIMULATED MARKET DATA · PRICES VIA SCRYFALL</p>
+                </div>
+                <button id="closeMarketBtn" class="text-slate-500 hover:text-red-400 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="market-ticker border-b border-white/10 flex-shrink-0">
+                <div class="ticker-track flex gap-6 py-2 px-4"></div>
+            </div>
+            <div id="marketBody" class="flex-grow overflow-y-auto p-4 sm:p-6 space-y-8"></div>
         </div>
     </div>
 
@@ -1165,7 +1351,10 @@
             let showLegality = false;
             let activeColorFilters = new Set();
             let priceChartInstance = null;
+            let detailPriceChartInstance = null;
             let acDebounceTimer = null;
+            let marketData = null;
+            let marketLoading = false;
 
             // Mana Theme System
             const manaThemes = {
@@ -1308,6 +1497,17 @@
             // New Feature Listeners
             statsBtn.addEventListener('click', openStatsModal);
             dupesBtn.addEventListener('click', openDupesModal);
+            document.getElementById('marketBtn').addEventListener('click', openMarketDashboard);
+            document.getElementById('closeMarketBtn').addEventListener('click', () => document.getElementById('marketModal').classList.add('hidden'));
+            document.getElementById('marketBody').addEventListener('click', (e) => {
+                const row = e.target.closest('.market-card-row');
+                if (!row) return;
+                const cardId = row.dataset.cardId;
+                if (marketData) {
+                    const item = marketData.find(d => d.card.id === cardId);
+                    if (item) openCardDetail(item.card);
+                }
+            });
             legalityBtn.addEventListener('click', () => {
                 showLegality = !showLegality;
                 legalityBtn.classList.toggle('bg-purple-600/30', showLegality);
@@ -1747,6 +1947,24 @@
 
                 totalValueEl.textContent = `${getCurrencySymbol()}${totalValue.toFixed(2)}`;
                 totalCardsEl.textContent = totalCards;
+
+                // Portfolio change indicator
+                const pcEl = document.getElementById('portfolioChange');
+                if (pcEl) {
+                    const hist = JSON.parse(localStorage.getItem('mtgPriceHistory') || '{}');
+                    const collHist = hist[activeCollectionName] || [];
+                    if (collHist.length >= 2) {
+                        const prevVal = collHist[collHist.length - 2].value;
+                        const pctChange = prevVal > 0 ? ((totalValue - prevVal) / prevVal * 100) : 0;
+                        const isUp = pctChange >= 0;
+                        pcEl.className = `portfolio-change ${isUp ? 'up' : 'down'}`;
+                        pcEl.textContent = `${isUp ? '▲' : '▼'} ${Math.abs(pctChange).toFixed(1)}%`;
+                        pcEl.classList.remove('hidden');
+                    } else {
+                        pcEl.classList.add('hidden');
+                    }
+                }
+
                 filterInventory();
             }
 
@@ -2596,7 +2814,7 @@
 
             // ===== KEYBOARD HELPERS =====
             function closeTopmostModal() {
-                const modals = [cardDetailModal, statsModal, dupesModal, importModal, visualViewModal, photoStudioModal, ebayViewModal];
+                const modals = [cardDetailModal, statsModal, dupesModal, document.getElementById('marketModal'), importModal, visualViewModal, photoStudioModal, ebayViewModal];
                 for (const m of modals) {
                     if (!m.classList.contains('hidden')) { m.classList.add('hidden'); return; }
                 }
@@ -2741,6 +2959,28 @@
                             }
                         }
                     } catch (e) { /* rulings fetch failed, non-critical */ }
+                }
+
+                // Price chart
+                const cardPrice = parseFloat(card.prices[currentCurrency]) || parseFloat(card.prices.usd) || 0;
+                const priceSection = document.getElementById('detailPriceSection');
+                if (cardPrice > 0) {
+                    priceSection.classList.remove('hidden');
+                    const fullHistory = generateSyntheticHistory(cardPrice, 365, card.id);
+                    let activeDays = 30;
+                    showDetailPriceChart(fullHistory, activeDays, cardPrice);
+                    document.querySelectorAll('#detailPriceSection .timeframe-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (parseInt(btn.dataset.days) === activeDays) btn.classList.add('active');
+                        btn.onclick = () => {
+                            activeDays = parseInt(btn.dataset.days);
+                            document.querySelectorAll('#detailPriceSection .timeframe-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            showDetailPriceChart(fullHistory, activeDays, cardPrice);
+                        };
+                    });
+                } else {
+                    priceSection.classList.add('hidden');
                 }
             }
 
@@ -3038,6 +3278,230 @@
                         }
                     }
                 });
+            }
+
+            // ===== SYNTHETIC PRICE HISTORY =====
+            function generateSyntheticHistory(currentPrice, days, cardId) {
+                let h = 0;
+                for (let i = 0; i < cardId.length; i++) {
+                    h = ((h << 5) - h) + cardId.charCodeAt(i);
+                    h |= 0;
+                }
+                let s = Math.abs(h) || 1;
+                function rand() {
+                    s = (s * 1103515245 + 12345) & 0x7fffffff;
+                    return s / 0x7fffffff;
+                }
+                const points = [currentPrice];
+                let price = currentPrice;
+                for (let i = 1; i <= days; i++) {
+                    const r = rand();
+                    const change = (r - 0.52) * 0.07;
+                    price = price / (1 + change);
+                    price = Math.max(0.01, price);
+                    points.unshift(price);
+                }
+                return points;
+            }
+
+            // ===== DETAIL PRICE CHART =====
+            function showDetailPriceChart(fullHistory, days, currentPrice) {
+                const slice = fullHistory.slice(-(days + 1));
+                const startPrice = slice[0];
+                const change = startPrice > 0 ? ((currentPrice - startPrice) / startPrice * 100) : 0;
+                const isUp = change >= 0;
+                const high = Math.max(...slice);
+                const low = Math.min(...slice);
+                const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+
+                document.getElementById('detailCurrentPrice').textContent = getCurrencySymbol() + currentPrice.toFixed(2);
+                const changeEl = document.getElementById('detailPriceChange');
+                changeEl.textContent = `${isUp ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`;
+                changeEl.className = `ml-2 text-sm font-mono ${isUp ? 'price-up' : 'price-down'}`;
+
+                document.getElementById('detailPriceHigh').textContent = getCurrencySymbol() + high.toFixed(2);
+                document.getElementById('detailPriceLow').textContent = getCurrencySymbol() + low.toFixed(2);
+                document.getElementById('detailPriceAvg').textContent = getCurrencySymbol() + avg.toFixed(2);
+
+                const canvas = document.getElementById('detailPriceChart');
+                if (detailPriceChartInstance) detailPriceChartInstance.destroy();
+
+                const color = isUp ? '#22c55e' : '#ef4444';
+                const bgColor = isUp ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+
+                detailPriceChartInstance = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: slice.map((_, i) => i),
+                        datasets: [{
+                            data: slice,
+                            borderColor: color,
+                            backgroundColor: bgColor,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: (ctx) => getCurrencySymbol() + ctx.raw.toFixed(2) } }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                display: true,
+                                ticks: { color: '#475569', font: { size: 9 }, callback: v => getCurrencySymbol() + v.toFixed(2) },
+                                grid: { color: 'rgba(255,255,255,0.03)' }
+                            }
+                        },
+                        interaction: { intersect: false, mode: 'index' }
+                    }
+                });
+            }
+
+            // ===== SPARKLINE RENDERER =====
+            function renderSparkline(canvas, data, isPositive) {
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                const w = canvas.offsetWidth;
+                const h = canvas.offsetHeight;
+                canvas.width = w * dpr;
+                canvas.height = h * dpr;
+                ctx.scale(dpr, dpr);
+
+                const min = Math.min(...data);
+                const max = Math.max(...data);
+                const range = max - min || 1;
+                const color = isPositive ? '#22c55e' : '#ef4444';
+
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                data.forEach((v, i) => {
+                    const x = (i / (data.length - 1)) * w;
+                    const y = h - ((v - min) / range) * (h - 4) - 2;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                ctx.lineTo(w, h);
+                ctx.lineTo(0, h);
+                ctx.closePath();
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, isPositive ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)');
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+
+            // ===== MARKET DASHBOARD =====
+            async function openMarketDashboard() {
+                const modal = document.getElementById('marketModal');
+                const body = document.getElementById('marketBody');
+                modal.classList.remove('hidden');
+
+                if (marketData && !marketLoading) {
+                    renderMarketDashboard();
+                    return;
+                }
+
+                body.innerHTML = '<div class="flex justify-center items-center py-20"><div class="loader ease-linear rounded-full border-4 h-16 w-16"></div></div>';
+                marketLoading = true;
+
+                try {
+                    const resp = await fetch('https://api.scryfall.com/cards/search?q=game%3Apaper+usd%3E3&unique=cards&order=usd&dir=desc');
+                    if (!resp.ok) throw new Error('Failed to fetch market data');
+                    const data = await resp.json();
+                    const cards = (data.data || []).slice(0, 60).filter(c => parseFloat(c.prices.usd) > 0);
+
+                    marketData = cards.map(card => {
+                        const price = parseFloat(card.prices[currentCurrency]) || parseFloat(card.prices.usd) || 0;
+                        const history = generateSyntheticHistory(price, 365, card.id);
+                        const weekAgo = history[history.length - 8] || history[0];
+                        const weekChange = weekAgo > 0 ? ((price - weekAgo) / weekAgo * 100) : 0;
+                        const dayAgo = history[history.length - 2] || history[0];
+                        const dayChange = dayAgo > 0 ? ((price - dayAgo) / dayAgo * 100) : 0;
+                        return { card, price, history, weekChange, dayChange };
+                    });
+
+                    renderMarketDashboard();
+                } catch (e) {
+                    body.innerHTML = `<p class="text-center text-red-400 py-20 font-mono">Failed to load market data: ${e.message}</p>`;
+                } finally {
+                    marketLoading = false;
+                }
+            }
+
+            function renderMarketDashboard() {
+                const body = document.getElementById('marketBody');
+                const tickerTrack = document.querySelector('.ticker-track');
+
+                // Ticker
+                tickerTrack.innerHTML = '';
+                const tickerItems = marketData.slice(0, 20);
+                [...tickerItems, ...tickerItems].forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'ticker-item';
+                    const changeClass = item.dayChange >= 0 ? 'price-up' : 'price-down';
+                    const arrow = item.dayChange >= 0 ? '▲' : '▼';
+                    el.innerHTML = `
+                        <span class="text-slate-300">${item.card.name}</span>
+                        <span class="text-slate-400">${getCurrencySymbol()}${item.price.toFixed(2)}</span>
+                        <span class="${changeClass}">${arrow} ${Math.abs(item.dayChange).toFixed(1)}%</span>
+                    `;
+                    tickerTrack.appendChild(el);
+                });
+
+                // Sections
+                const gainers = [...marketData].sort((a, b) => b.weekChange - a.weekChange).slice(0, 10);
+                const losers = [...marketData].sort((a, b) => a.weekChange - b.weekChange).slice(0, 10);
+                const mostValuable = [...marketData].sort((a, b) => b.price - a.price).slice(0, 10);
+
+                body.innerHTML = '';
+                body.innerHTML += renderMarketSection('TOP GAINERS · 7D', gainers, true);
+                body.innerHTML += renderMarketSection('TOP LOSERS · 7D', losers, false);
+                body.innerHTML += renderMarketSection('MOST VALUABLE', mostValuable, null);
+
+                requestAnimationFrame(() => {
+                    body.querySelectorAll('.sparkline-canvas').forEach(canvas => {
+                        const historyData = JSON.parse(canvas.dataset.history);
+                        const isPositive = canvas.dataset.positive === 'true';
+                        renderSparkline(canvas, historyData, isPositive);
+                    });
+                });
+            }
+
+            function renderMarketSection(title, items, forcePositive) {
+                let html = `<div><h3 class="market-section-header">${title}</h3><div class="space-y-2">`;
+                items.forEach(item => {
+                    const change = item.weekChange;
+                    const isPositive = forcePositive !== null ? forcePositive : change >= 0;
+                    const changeClass = change >= 0 ? 'price-up' : 'price-down';
+                    const arrow = change >= 0 ? '▲' : '▼';
+                    const img = getCardImage(item.card, 'small');
+                    const sparkData = item.history.slice(-30);
+
+                    html += `
+                        <div class="market-card-row" data-card-id="${item.card.id}">
+                            <div class="w-8 h-11 rounded bg-cover bg-center flex-shrink-0 border border-white/10" style="background-image:url('${img}')"></div>
+                            <div class="flex-grow min-w-0">
+                                <p class="text-sm font-semibold text-slate-200 truncate">${item.card.name}</p>
+                                <p class="text-[10px] font-mono text-slate-500">${(item.card.set || '').toUpperCase()} · ${item.card.rarity || ''}</p>
+                            </div>
+                            <canvas class="sparkline-canvas" data-history='${JSON.stringify(sparkData)}' data-positive="${isPositive}" style="width:80px;height:32px;"></canvas>
+                            <div class="text-right flex-shrink-0 w-24">
+                                <p class="text-sm font-bold font-mono text-slate-200">${getCurrencySymbol()}${item.price.toFixed(2)}</p>
+                                <p class="text-xs font-mono ${changeClass}">${arrow} ${Math.abs(change).toFixed(1)}%</p>
+                            </div>
+                        </div>`;
+                });
+                html += `</div></div>`;
+                return html;
             }
 
         });
