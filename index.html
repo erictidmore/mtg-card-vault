@@ -6,12 +6,21 @@
     <title>MTG Card Vault</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0a0a0f;
+            background-color: var(--bg);
             color: #e2e8f0;
+            --accent: #8b5cf6;
+            --accent-light: #c4b5fd;
+            --accent-rgb: 139,92,246;
+            --accent-light-rgb: 196,181,253;
+            --panel-rgb: 120,100,180;
+            --bg: #0a0a0f;
+            transition: background-color 0.6s ease;
         }
 
         h1, h2, h3, button {
@@ -306,6 +315,263 @@
         input[type="checkbox"] {
             accent-color: #8b5cf6;
         }
+
+        /* Autocomplete */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 25, 0.95);
+            border: 1px solid rgba(120, 100, 180, 0.3);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 30;
+            backdrop-filter: blur(16px);
+        }
+        .autocomplete-dropdown .ac-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: #c4b5fd;
+            transition: background 0.15s;
+        }
+        .autocomplete-dropdown .ac-item:hover {
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        /* Advanced Filters */
+        .color-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 12px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .color-btn.active {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+            transform: scale(1.15);
+        }
+
+        /* Card Flip */
+        .card-flip-container {
+            perspective: 800px;
+        }
+        .card-flip-inner {
+            position: relative;
+            width: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card-flip-inner.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-flip-front, .card-flip-back {
+            backface-visibility: hidden;
+        }
+        .card-flip-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transform: rotateY(180deg);
+        }
+        .flip-icon {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #c4b5fd;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: pointer;
+            z-index: 5;
+            backdrop-filter: blur(4px);
+            transition: background 0.2s;
+        }
+        .flip-icon:hover {
+            background: rgba(139, 92, 246, 0.6);
+        }
+
+        /* Export Dropdown */
+        .export-dropdown {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 25, 0.95);
+            border: 1px solid rgba(120, 100, 180, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 40;
+            margin-bottom: 4px;
+            backdrop-filter: blur(16px);
+        }
+        .export-dropdown button {
+            display: block;
+            width: 100%;
+            padding: 6px 12px;
+            text-align: left;
+            color: #c4b5fd;
+            font-size: 11px;
+            font-family: 'Share Tech Mono', monospace;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .export-dropdown button:hover {
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        /* Format Badges */
+        .fmt-badge {
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: 700;
+            font-family: 'Share Tech Mono', monospace;
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            margin-right: 2px;
+            line-height: 1.2;
+        }
+
+        /* Stat Bars */
+        .stat-bar-container { margin-bottom: 6px; }
+        .stat-bar-label {
+            font-size: 11px;
+            font-family: 'Share Tech Mono', monospace;
+            color: #94a3b8;
+            margin-bottom: 2px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .stat-bar-track {
+            height: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        /* Inline Quantity */
+        .inline-qty {
+            width: 40px;
+            text-align: center;
+            background: rgba(15, 15, 25, 0.8) !important;
+            border: 1px solid rgba(120, 100, 180, 0.2) !important;
+            border-radius: 6px;
+            color: #e2e8f0 !important;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            padding: 2px;
+            -moz-appearance: textfield;
+        }
+        .inline-qty::-webkit-inner-spin-button,
+        .inline-qty::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Mana Symbols */
+        .mana-symbol {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 700;
+            margin-right: 2px;
+        }
+
+        /* Wishlist Styling */
+        .wishlist-item {
+            opacity: 0.7;
+            border-style: dashed !important;
+        }
+
+        /* ===== MANA THEME SYSTEM ===== */
+        .mana-orb {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .mana-orb:hover {
+            transform: scale(1.25);
+            border-color: rgba(255,255,255,0.4);
+        }
+        .mana-orb.active {
+            border-color: var(--accent-light);
+            box-shadow: 0 0 14px 3px rgba(var(--accent-rgb), 0.5);
+            transform: scale(1.15);
+        }
+
+        /* Theme overrides — cascade over hardcoded values */
+        .clean-panel { border-color: rgba(var(--panel-rgb), 0.15) !important; }
+        .card { border-color: rgba(var(--panel-rgb), 0.15) !important; }
+        .card:hover { box-shadow: 0 4px 20px rgba(var(--accent-rgb), 0.2) !important; border-color: rgba(var(--accent-rgb), 0.4) !important; }
+        input[type="text"]:focus, select:focus, textarea:focus, input[type="number"]:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15) !important; }
+        input[type="text"], select, textarea, input[type="range"] { border-color: rgba(var(--panel-rgb), 0.2) !important; }
+        ::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb), 0.3) !important; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb), 0.5) !important; }
+        .loader { border-top-color: var(--accent) !important; border-right-color: var(--accent-light) !important; border-bottom-color: var(--accent) !important; border-left-color: var(--accent-light) !important; }
+        input[type=range]::-webkit-slider-thumb { background: var(--accent) !important; }
+        input[type=range]::-webkit-slider-runnable-track { background: rgba(var(--panel-rgb), 0.3) !important; }
+        input[type="checkbox"] { accent-color: var(--accent) !important; }
+        .checklist-item { border-bottom-color: rgba(var(--panel-rgb), 0.2) !important; }
+        .checklist-item:hover { background-color: rgba(var(--accent-rgb), 0.06) !important; }
+        .color-btn.active { border-color: var(--accent) !important; box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5) !important; }
+        .flip-icon { color: var(--accent-light) !important; }
+        .flip-icon:hover { background: rgba(var(--accent-rgb), 0.6) !important; }
+        .autocomplete-dropdown { border-color: rgba(var(--panel-rgb), 0.3) !important; }
+        .autocomplete-dropdown .ac-item { color: var(--accent-light) !important; }
+        .autocomplete-dropdown .ac-item:hover { background: rgba(var(--accent-rgb), 0.15) !important; }
+        .export-dropdown { border-color: rgba(var(--panel-rgb), 0.3) !important; }
+        .export-dropdown button { color: var(--accent-light) !important; }
+        .export-dropdown button:hover { background: rgba(var(--accent-rgb), 0.15) !important; }
+        .fmt-badge { background: rgba(var(--accent-rgb), 0.15) !important; color: var(--accent-light) !important; border-color: rgba(var(--accent-rgb), 0.2) !important; }
+        .inline-qty { border-color: rgba(var(--panel-rgb), 0.2) !important; }
+
+        /* Tailwind utility overrides */
+        .bg-purple-600 { background-color: var(--accent) !important; }
+        .hover\:bg-purple-500:hover { background-color: var(--accent) !important; filter: brightness(1.15) !important; }
+        .text-purple-400 { color: var(--accent-light) !important; }
+        .text-purple-300 { color: var(--accent-light) !important; }
+        .border-t-purple-500 { border-top-color: var(--accent) !important; }
+        .border-purple-500\/30 { border-color: rgba(var(--accent-rgb), 0.3) !important; }
+        .border-purple-500\/20 { border-color: rgba(var(--accent-rgb), 0.2) !important; }
+        .bg-purple-500\/10 { background-color: rgba(var(--accent-rgb), 0.1) !important; }
+        .bg-purple-600\/30 { background-color: rgba(var(--accent-rgb), 0.3) !important; }
+        .hover\:bg-purple-500\/20:hover { background-color: rgba(var(--accent-rgb), 0.2) !important; }
+        .hover\:text-purple-400:hover { color: var(--accent-light) !important; }
+        .hover\:border-purple-500\/40:hover { border-color: rgba(var(--accent-rgb), 0.4) !important; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -314,6 +580,14 @@
         <header class="text-center mb-6 sm:mb-10 relative">
             <h1 class="text-3xl sm:text-5xl md:text-6xl font-bold text-slate-100 tracking-tight">MTG Card Vault</h1>
             <p class="text-purple-400 mt-2 font-mono text-sm tracking-widest">COLLECTION MANAGER</p>
+            <div class="flex justify-center gap-3 mt-3">
+                <button class="mana-orb" data-theme="white" style="background: radial-gradient(circle at 35% 35%, #E8DCCA, #B09470);" title="Plains"></button>
+                <button class="mana-orb" data-theme="blue" style="background: radial-gradient(circle at 35% 35%, #5DADE2, #0E68AB);" title="Island"></button>
+                <button class="mana-orb" data-theme="black" style="background: radial-gradient(circle at 35% 35%, #555, #150B00);" title="Swamp"></button>
+                <button class="mana-orb" data-theme="red" style="background: radial-gradient(circle at 35% 35%, #F1948A, #C0392B);" title="Mountain"></button>
+                <button class="mana-orb" data-theme="green" style="background: radial-gradient(circle at 35% 35%, #58D68D, #00733E);" title="Forest"></button>
+            </div>
+            <p class="text-slate-600 mt-2 font-mono text-[10px] tracking-wider">CTRL+Z UNDO · CTRL+SHIFT+Z REDO · CTRL+S SAVE · ESC CLOSE · ←→ PAGINATE</p>
         </header>
 
         <div class="mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl clean-panel relative">
@@ -325,6 +599,10 @@
                 <input type="text" id="setCode" class="flex-grow rounded-xl px-4 py-3" placeholder="Enter set codes (e.g. LTR, MOM)">
                 <button id="searchBtn" class="btn-clean bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-8 rounded-xl">SEARCH</button>
                 <button id="clearSearchBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-8 rounded-xl border border-white/10">CLEAR</button>
+            </div>
+            <div class="relative mt-4">
+                <input type="text" id="cardNameSearch" class="w-full rounded-xl px-4 py-3" placeholder="Search by card name (autocomplete)...">
+                <div id="autocompleteDropdown" class="autocomplete-dropdown hidden"></div>
             </div>
             <div class="flex flex-col sm:flex-row gap-x-8 gap-y-4 mt-5 text-sm font-medium">
                 <div class="flex items-center group cursor-pointer">
@@ -354,6 +632,7 @@
                         Results
                     </h2>
                     <div class="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
+                         <button id="toggleFiltersBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-4 rounded-xl text-xs border border-white/10">FILTERS</button>
                          <input type="text" id="filterInput" class="rounded-xl px-4 py-2 w-full sm:w-64" placeholder="Filter by Name">
                         <select id="sortOrder" class="rounded-xl px-2 py-2 w-full sm:w-auto">
                             <option value="name_asc">Name (A-Z)</option>
@@ -361,6 +640,51 @@
                             <option value="price_desc">Price (High)</option>
                             <option value="price_asc">Price (Low)</option>
                         </select>
+                    </div>
+                </div>
+                <div id="advancedFilters" class="hidden mb-6 p-4 rounded-xl clean-panel">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="text-xs text-slate-500 font-mono mb-1 block">RARITY</label>
+                            <select id="filterRarity" class="rounded-xl px-2 py-2 w-full">
+                                <option value="">Any</option>
+                                <option value="common">Common</option>
+                                <option value="uncommon">Uncommon</option>
+                                <option value="rare">Rare</option>
+                                <option value="mythic">Mythic</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 font-mono mb-1 block">TYPE</label>
+                            <select id="filterType" class="rounded-xl px-2 py-2 w-full">
+                                <option value="">Any</option>
+                                <option value="creature">Creature</option>
+                                <option value="instant">Instant</option>
+                                <option value="sorcery">Sorcery</option>
+                                <option value="enchantment">Enchantment</option>
+                                <option value="artifact">Artifact</option>
+                                <option value="planeswalker">Planeswalker</option>
+                                <option value="land">Land</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 font-mono mb-1 block">CMC MIN</label>
+                            <input type="text" id="filterCmcMin" class="rounded-xl px-2 py-2 w-full" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 font-mono mb-1 block">CMC MAX</label>
+                            <input type="text" id="filterCmcMax" class="rounded-xl px-2 py-2 w-full" placeholder="any">
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label class="text-xs text-slate-500 font-mono mb-2 block">COLOR IDENTITY</label>
+                        <div class="flex gap-2">
+                            <button class="color-btn" data-color="W" style="background:#F9FAF4;color:#333;">W</button>
+                            <button class="color-btn" data-color="U" style="background:#0E68AB;color:#fff;">U</button>
+                            <button class="color-btn" data-color="B" style="background:#150B00;color:#fff;">B</button>
+                            <button class="color-btn" data-color="R" style="background:#D3202A;color:#fff;">R</button>
+                            <button class="color-btn" data-color="G" style="background:#00733E;color:#fff;">G</button>
+                        </div>
                     </div>
                 </div>
                 <div id="searchResults" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -390,15 +714,33 @@
                             </div>
                              <div class="flex flex-col gap-2">
                                 <input type="text" id="newCollectionName" class="w-full rounded-xl px-4 py-2" placeholder="New collection name...">
-                                <button id="createCollectionBtn" class="btn-clean bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl text-sm w-full">CREATE</button>
+                                <div class="flex gap-2">
+                                    <select id="collectionTypeSelector" class="rounded-xl px-2 py-2 w-28 text-xs">
+                                        <option value="collection">Collection</option>
+                                        <option value="wishlist">Wishlist</option>
+                                    </select>
+                                    <button id="createCollectionBtn" class="btn-clean bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl text-sm flex-1">CREATE</button>
+                                </div>
                             </div>
                             <div class="grid grid-cols-3 sm:grid-cols-3 gap-2 mt-4">
                                 <button id="renameCollectionBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">RENAME</button>
                                 <button id="updatePricesBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">SYNC</button>
                                 <button id="importTxtBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">IMPORT</button>
-                                <button id="exportTxtBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">EXPORT</button>
+                                <button id="statsBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">STATS</button>
+                                <button id="dupesBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">DUPES</button>
+                                <div class="relative">
+                                    <button id="exportTxtBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap w-full h-full">EXPORT ▼</button>
+                                    <div id="exportDropdown" class="export-dropdown hidden">
+                                        <button data-format="txt">TXT (Original)</button>
+                                        <button data-format="moxfield">Moxfield</button>
+                                        <button data-format="archidekt">Archidekt</button>
+                                        <button data-format="csv">CSV</button>
+                                        <button data-format="share">Share Link</button>
+                                    </div>
+                                </div>
                                 <button id="visualViewBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">GRID VIEW</button>
                                 <button id="photoStudioBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">MANIFEST</button>
+                                <button id="legalityBtn" class="btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-2 px-1 rounded-lg text-[10px] tracking-wider border border-white/10 whitespace-nowrap">LEGALITY</button>
                                 <button id="ebayViewBtn" class="col-span-3 btn-clean bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-xl text-xs border border-purple-500/30 whitespace-nowrap">LIST GENERATOR</button>
                             </div>
                         </div>
@@ -412,6 +754,11 @@
                                 <p class="text-slate-500 text-xs">TOTAL CARDS</p>
                                 <p id="totalCards" class="text-xl font-bold text-slate-200">0</p>
                             </div>
+                        </div>
+
+                        <div id="priceChartContainer" class="mb-4 hidden">
+                            <p class="text-slate-500 text-[10px] font-mono mb-1 tracking-wider">PRICE HISTORY</p>
+                            <canvas id="priceHistoryChart" height="100"></canvas>
                         </div>
 
                         <div id="inventory" class="space-y-3 max-h-[50vh] lg:max-h-[40vh] overflow-y-auto pr-2">
@@ -519,6 +866,62 @@
     </div>
 
 
+    <!-- Card Detail Popover -->
+    <div id="cardDetailModal" class="modal-overlay hidden fixed inset-0 flex items-center justify-center p-2 sm:p-4" style="z-index:60;">
+        <div class="rounded-2xl p-5 sm:p-8 w-full max-w-3xl max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl" style="background: rgba(15, 15, 25, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+            <div class="flex justify-between items-start mb-4">
+                <h2 id="detailCardName" class="text-2xl font-bold text-slate-100"></h2>
+                <button id="closeCardDetailBtn" class="text-slate-500 hover:text-red-400 text-3xl leading-none ml-4">&times;</button>
+            </div>
+            <div id="cardDetailBody" class="flex flex-col md:flex-row gap-6">
+                <div id="detailImageContainer" class="flex-shrink-0 w-full md:w-64">
+                    <div class="card-flip-container">
+                        <div id="detailFlipInner" class="card-flip-inner">
+                            <div class="card-flip-front"><img id="detailCardImage" class="w-full rounded-lg" src=""></div>
+                            <div class="card-flip-back"><img id="detailCardImageBack" class="w-full rounded-lg" src=""></div>
+                        </div>
+                    </div>
+                    <button id="detailFlipBtn" class="hidden mt-2 w-full btn-clean bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-1 px-3 rounded-lg text-xs border border-white/10">FLIP CARD ↻</button>
+                </div>
+                <div class="flex-grow space-y-4">
+                    <div id="detailManaCost" class="flex items-center gap-1 flex-wrap"></div>
+                    <p id="detailTypeLine" class="text-sm text-slate-400 font-mono border-b border-white/10 pb-2"></p>
+                    <div id="detailOracleText" class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed"></div>
+                    <div id="detailLegalities" class="flex flex-wrap gap-1 pt-2 border-t border-white/10"></div>
+                    <div id="detailRulings" class="pt-2 border-t border-white/10 space-y-2 hidden">
+                        <p class="text-xs font-mono text-slate-500 tracking-wider">RULINGS</p>
+                        <div id="detailRulingsList" class="space-y-2 text-xs text-slate-400"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+        <div class="rounded-2xl p-5 sm:p-8 w-full max-w-3xl max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl" style="background: rgba(15, 15, 25, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-100">Collection Stats</h2>
+                <button id="closeStatsBtn" class="text-slate-500 hover:text-red-400 text-3xl leading-none">&times;</button>
+            </div>
+            <div id="statsBody"></div>
+            <div class="mt-6 flex justify-center">
+                <canvas id="colorWheelChart" width="280" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dupes Modal -->
+    <div id="dupesModal" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+        <div class="rounded-2xl p-5 sm:p-8 w-full max-w-2xl max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl" style="background: rgba(15, 15, 25, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-100">Duplicate Finder</h2>
+                <button id="closeDupesBtn" class="text-slate-500 hover:text-red-400 text-3xl leading-none">&times;</button>
+            </div>
+            <div id="dupesBody"></div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // UI Elements
@@ -586,6 +989,34 @@
             const ebaySelectAll = document.getElementById('ebaySelectAll');
             const copyEbayBtn = document.getElementById('copyEbayBtn');
 
+            // New Feature UI Elements
+            const cardNameSearch = document.getElementById('cardNameSearch');
+            const autocompleteDropdown = document.getElementById('autocompleteDropdown');
+            const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+            const advancedFilters = document.getElementById('advancedFilters');
+            const filterRarity = document.getElementById('filterRarity');
+            const filterType = document.getElementById('filterType');
+            const filterCmcMin = document.getElementById('filterCmcMin');
+            const filterCmcMax = document.getElementById('filterCmcMax');
+            const colorBtns = document.querySelectorAll('.color-btn');
+            const statsBtn = document.getElementById('statsBtn');
+            const dupesBtn = document.getElementById('dupesBtn');
+            const legalityBtn = document.getElementById('legalityBtn');
+            const exportDropdown = document.getElementById('exportDropdown');
+            const collectionTypeSelector = document.getElementById('collectionTypeSelector');
+            const priceChartContainer = document.getElementById('priceChartContainer');
+            const priceHistoryCanvas = document.getElementById('priceHistoryChart');
+            const cardDetailModal = document.getElementById('cardDetailModal');
+            const closeCardDetailBtn = document.getElementById('closeCardDetailBtn');
+            const detailFlipBtn = document.getElementById('detailFlipBtn');
+            const detailFlipInner = document.getElementById('detailFlipInner');
+            const statsModal = document.getElementById('statsModal');
+            const closeStatsBtn = document.getElementById('closeStatsBtn');
+            const statsBody = document.getElementById('statsBody');
+            const dupesModal = document.getElementById('dupesModal');
+            const closeDupesBtn = document.getElementById('closeDupesBtn');
+            const dupesBody = document.getElementById('dupesBody');
+
             // App State
             let collections = {};
             let activeCollectionName = '';
@@ -594,8 +1025,52 @@
             let currentPage = 1;
             const cardsPerPage = 20;
 
+            // Undo/Redo
+            let undoStack = [];
+            let redoStack = [];
+            const MAX_UNDO = 50;
+
+            // Wishlist meta
+            let collectionMeta = {};
+
+            // Feature toggles
+            let showLegality = false;
+            let activeColorFilters = new Set();
+            let priceChartInstance = null;
+            let acDebounceTimer = null;
+
+            // Mana Theme System
+            const manaThemes = {
+                default: { accent: '#8b5cf6', accentRgb: '139,92,246', accentLight: '#c4b5fd', accentLightRgb: '196,181,253', panelRgb: '120,100,180', bg: '#0a0a0f' },
+                white:   { accent: '#C2A878', accentRgb: '194,168,120', accentLight: '#DDD0B5', accentLightRgb: '221,208,181', panelRgb: '170,150,120', bg: '#100e08' },
+                blue:    { accent: '#1A7BBD', accentRgb: '26,123,189', accentLight: '#7CB5D9', accentLightRgb: '124,181,217', panelRgb: '60,110,170', bg: '#080a10' },
+                black:   { accent: '#7C6B8A', accentRgb: '124,107,138', accentLight: '#B0A0C0', accentLightRgb: '176,160,192', panelRgb: '100,90,120', bg: '#09080c' },
+                red:     { accent: '#C92A2A', accentRgb: '201,42,42', accentLight: '#E88A8A', accentLightRgb: '232,138,138', panelRgb: '170,80,80', bg: '#100808' },
+                green:   { accent: '#2D8B57', accentRgb: '45,139,87', accentLight: '#7DC4A0', accentLightRgb: '125,196,160', panelRgb: '60,130,90', bg: '#081008' }
+            };
+
+            function applyTheme(name) {
+                const t = manaThemes[name];
+                if (!t) return;
+                const s = document.body.style;
+                s.setProperty('--accent', t.accent);
+                s.setProperty('--accent-light', t.accentLight);
+                s.setProperty('--accent-rgb', t.accentRgb);
+                s.setProperty('--accent-light-rgb', t.accentLightRgb);
+                s.setProperty('--panel-rgb', t.panelRgb);
+                s.setProperty('--bg', t.bg);
+                document.querySelectorAll('.mana-orb').forEach(o => o.classList.remove('active'));
+                document.querySelector(`.mana-orb[data-theme="${name}"]`)?.classList.add('active');
+                localStorage.setItem('mtgTheme', name);
+            }
+
+            // Apply saved theme
+            const savedTheme = localStorage.getItem('mtgTheme');
+            if (savedTheme && manaThemes[savedTheme]) applyTheme(savedTheme);
+
             // Load collections from local storage on page load
             loadCollections();
+            checkShareLink();
 
             // Event Listeners
             searchBtn.addEventListener('click', searchBySetCode);
@@ -608,7 +1083,6 @@
             renameCollectionBtn.addEventListener('click', renameCollection);
             updatePricesBtn.addEventListener('click', updateCollectionPrices);
             importTxtBtn.addEventListener('click', openImportModal);
-            exportTxtBtn.addEventListener('click', exportCollectionToTxt);
             visualViewBtn.addEventListener('click', openVisualViewModal);
             photoStudioBtn.addEventListener('click', openManifestGenerator);
             ebayViewBtn.addEventListener('click', openEbayViewModal);
@@ -680,6 +1154,94 @@
                 checkboxes.forEach(cb => cb.checked = e.target.checked);
             });
             copyEbayBtn.addEventListener('click', copyEbayListToClipboard);
+
+            // Mana Theme Orbs
+            document.querySelectorAll('.mana-orb').forEach(orb => {
+                orb.addEventListener('click', () => applyTheme(orb.dataset.theme));
+            });
+
+            // New Feature Listeners
+            statsBtn.addEventListener('click', openStatsModal);
+            dupesBtn.addEventListener('click', openDupesModal);
+            legalityBtn.addEventListener('click', () => {
+                showLegality = !showLegality;
+                legalityBtn.classList.toggle('bg-purple-600/30', showLegality);
+                legalityBtn.classList.toggle('border-purple-500/40', showLegality);
+                updateInventoryDisplay();
+            });
+            closeCardDetailBtn.addEventListener('click', () => cardDetailModal.classList.add('hidden'));
+            closeStatsBtn.addEventListener('click', () => statsModal.classList.add('hidden'));
+            closeDupesBtn.addEventListener('click', () => dupesModal.classList.add('hidden'));
+            detailFlipBtn.addEventListener('click', () => detailFlipInner.classList.toggle('flipped'));
+
+            // Export dropdown
+            exportTxtBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                exportDropdown.classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => exportDropdown.classList.add('hidden'));
+            exportDropdown.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    exportDropdown.classList.add('hidden');
+                    handleExport(btn.dataset.format);
+                });
+            });
+
+            // Advanced filters
+            toggleFiltersBtn.addEventListener('click', () => {
+                advancedFilters.classList.toggle('hidden');
+                toggleFiltersBtn.textContent = advancedFilters.classList.contains('hidden') ? 'FILTERS' : 'HIDE FILTERS';
+            });
+            filterRarity.addEventListener('change', () => { currentPage = 1; filterAndSortAndDisplayResults(); });
+            filterType.addEventListener('change', () => { currentPage = 1; filterAndSortAndDisplayResults(); });
+            filterCmcMin.addEventListener('input', () => { currentPage = 1; filterAndSortAndDisplayResults(); });
+            filterCmcMax.addEventListener('input', () => { currentPage = 1; filterAndSortAndDisplayResults(); });
+            colorBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const color = btn.dataset.color;
+                    if (activeColorFilters.has(color)) {
+                        activeColorFilters.delete(color);
+                        btn.classList.remove('active');
+                    } else {
+                        activeColorFilters.add(color);
+                        btn.classList.add('active');
+                    }
+                    currentPage = 1;
+                    filterAndSortAndDisplayResults();
+                });
+            });
+
+            // Autocomplete
+            cardNameSearch.addEventListener('input', () => {
+                clearTimeout(acDebounceTimer);
+                const q = cardNameSearch.value.trim();
+                if (q.length < 2) { autocompleteDropdown.classList.add('hidden'); return; }
+                acDebounceTimer = setTimeout(() => fetchAutocomplete(q), 250);
+            });
+            cardNameSearch.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') autocompleteDropdown.classList.add('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!cardNameSearch.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
+                    autocompleteDropdown.classList.add('hidden');
+                }
+            });
+
+            // Keyboard Shortcuts
+            document.addEventListener('keydown', (e) => {
+                const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+                if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) { e.preventDefault(); redo(); }
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCollections(); }
+                if (e.key === 'Escape') closeTopmostModal();
+                if (!isInput && e.key === 'ArrowLeft') { if (currentPage > 1) { currentPage--; filterAndSortAndDisplayResults(); } }
+                if (!isInput && e.key === 'ArrowRight') {
+                    const total = getFilteredCount();
+                    const totalPages = Math.ceil(total / cardsPerPage);
+                    if (currentPage < totalPages) { currentPage++; filterAndSortAndDisplayResults(); }
+                }
+            });
 
 
             /**
@@ -754,9 +1316,29 @@
                 let filteredResults = currentSearchResults;
 
                 if (filterText) {
-                    filteredResults = currentSearchResults.filter(card =>
+                    filteredResults = filteredResults.filter(card =>
                         card.name.toLowerCase().includes(filterText)
                     );
+                }
+
+                // Advanced filters
+                const rarity = filterRarity.value;
+                if (rarity) filteredResults = filteredResults.filter(c => c.rarity === rarity);
+
+                const type = filterType.value;
+                if (type) filteredResults = filteredResults.filter(c => c.type_line && c.type_line.toLowerCase().includes(type));
+
+                const cmcMin = parseFloat(filterCmcMin.value);
+                if (!isNaN(cmcMin)) filteredResults = filteredResults.filter(c => (c.cmc || 0) >= cmcMin);
+
+                const cmcMax = parseFloat(filterCmcMax.value);
+                if (!isNaN(cmcMax)) filteredResults = filteredResults.filter(c => (c.cmc || 0) <= cmcMax);
+
+                if (activeColorFilters.size > 0) {
+                    filteredResults = filteredResults.filter(c => {
+                        const ci = c.color_identity || [];
+                        return [...activeColorFilters].every(color => ci.includes(color));
+                    });
                 }
 
                 const sortOrder = sortOrderSelect.value;
@@ -808,9 +1390,19 @@
                     const cardElement = document.createElement('div');
                     cardElement.className = 'card rounded-lg overflow-hidden flex flex-col';
                     cardElement.setAttribute('data-card-id', card.id);
+                    const isDfc = card.card_faces && card.card_faces.length >= 2 && card.card_faces[0].image_uris && card.card_faces[1].image_uris;
+                    const flipHtml = isDfc ? `<div class="flip-icon" data-flip>↻</div>` : '';
+                    const frontImg = getCardImage(card, 'normal');
+                    const backImg = isDfc ? card.card_faces[1].image_uris.normal : '';
                     cardElement.innerHTML = `
-                        <div class="relative">
-                            <img src="${getCardImage(card, 'normal')}" alt="${card.name}" class="w-full h-auto" onerror="this.onerror=null;this.src='https://placehold.co/223x310/1a1a2e/8b5cf6?text=No+Image';">
+                        <div class="relative card-flip-container">
+                            <div class="card-flip-inner" data-flip-inner>
+                                <div class="card-flip-front">
+                                    <img src="${frontImg}" alt="${card.name}" class="w-full h-auto cursor-pointer" data-detail onerror="this.onerror=null;this.src='https://placehold.co/223x310/1a1a2e/8b5cf6?text=No+Image';">
+                                </div>
+                                ${isDfc ? `<div class="card-flip-back"><img src="${backImg}" alt="${card.name} (back)" class="w-full h-auto"></div>` : ''}
+                            </div>
+                            ${flipHtml}
                         </div>
                         <div class="p-3 sm:p-4 flex-grow flex flex-col justify-between">
                             <h3 class="font-bold text-sm sm:text-base truncate text-slate-100 font-mono tracking-tighter">${card.name}</h3>
@@ -851,6 +1443,19 @@
                         });
                     });
 
+                    // Detail popover on image click
+                    const detailImg = cardElement.querySelector('[data-detail]');
+                    if (detailImg) detailImg.addEventListener('click', () => openCardDetail(card));
+
+                    // DFC flip
+                    const flipIcon = cardElement.querySelector('[data-flip]');
+                    if (flipIcon) {
+                        flipIcon.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            cardElement.querySelector('[data-flip-inner]').classList.toggle('flipped');
+                        });
+                    }
+
                     searchResultsContainer.appendChild(cardElement);
                 });
             }
@@ -881,7 +1486,8 @@
                 });
             }
 
-            function addToInventory(card, quantityToAdd, isFoil) {
+            function addToInventory(card, quantityToAdd, isFoil, skipUndo = false) {
+                if (!skipUndo) pushUndoState('Add ' + card.name);
                 const currentInventory = collections[activeCollectionName];
                 const inventoryId = card.id + (isFoil ? '_foil' : '_normal');
                 const existingCard = currentInventory.find(item => item.inventoryId === inventoryId);
@@ -897,6 +1503,7 @@
             }
 
             function removeFromInventory(cardId, isFoil) {
+                pushUndoState('Remove card');
                 const currentInventory = collections[activeCollectionName];
                 const inventoryId = cardId + (isFoil ? '_foil' : '_normal');
                 const cardIndex = currentInventory.findIndex(item => item.inventoryId === inventoryId);
@@ -926,26 +1533,66 @@
 
                 currentInventory.sort((a,b) => a.name.localeCompare(b.name) || (a.isFoil - b.isFoil));
 
+                const isWishlist = (collectionMeta[activeCollectionName] || {}).type === 'wishlist';
+
                 currentInventory.forEach(card => {
                     const price = parseFloat(card.isFoil ? card.prices[`${currentCurrency}_foil`] : card.prices[currentCurrency]) || 0;
                     totalValue += price * card.quantity;
                     totalCards += card.quantity;
                     const inventoryItem = document.createElement('div');
-                    inventoryItem.className = 'inventory-item flex items-center justify-between bg-white/5 p-2 rounded-lg border border-white/10 hover:border-purple-500/30 transition-colors group';
+                    inventoryItem.className = `inventory-item flex items-center justify-between bg-white/5 p-2 rounded-lg border border-white/10 hover:border-purple-500/30 transition-colors group ${isWishlist ? 'wishlist-item' : ''}`;
                     inventoryItem.dataset.cardName = card.name.toLowerCase();
 
                     const foilBadge = card.isFoil ? '<span class="text-amber-400 font-bold ml-1 text-xs tracking-wider">[FOIL]</span>' : '';
+                    const wantedLabel = isWishlist ? '<span class="text-purple-400 text-[9px] font-mono ml-1">WANTED</span>' : '';
+
+                    // Format legality badges
+                    let legalityHtml = '';
+                    if (showLegality && card.legalities) {
+                        const fmtMap = {standard:'STD',modern:'MOD',commander:'CMD',pioneer:'PIO',legacy:'LEG',vintage:'VIN',pauper:'PAU'};
+                        Object.entries(fmtMap).forEach(([k,v]) => {
+                            if (card.legalities[k] === 'legal') legalityHtml += `<span class="fmt-badge">${v}</span>`;
+                        });
+                    }
 
                     inventoryItem.innerHTML = `
-                        <div class="flex items-center gap-3 overflow-hidden">
-                            <div class="w-8 h-8 rounded bg-cover bg-center flex-shrink-0 border border-white/10" style="background-image: url('${getCardImage(card, 'small')}');"></div>
-                            <div class="min-w-0">
-                                <p class="font-semibold text-slate-300 truncate text-sm font-mono group-hover:text-slate-100 transition-colors">${card.name} ${foilBadge}</p>
-                                <p class="text-xs text-slate-500 font-mono">${getCurrencySymbol()}${price.toFixed(2)} x ${card.quantity}</p>
+                        <div class="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
+                            <div class="w-8 h-8 rounded bg-cover bg-center flex-shrink-0 border border-white/10 cursor-pointer" style="background-image: url('${getCardImage(card, 'small')}');" data-inv-detail></div>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-semibold text-slate-300 truncate text-sm font-mono group-hover:text-slate-100 transition-colors">${card.name} ${foilBadge}${wantedLabel}</p>
+                                <div class="flex items-center gap-1 text-xs text-slate-500 font-mono">
+                                    <span>${getCurrencySymbol()}${price.toFixed(2)} x</span>
+                                    <input type="number" class="inline-qty" value="${card.quantity}" min="0" data-inv-id="${card.inventoryId}">
+                                </div>
+                                ${legalityHtml ? `<div class="mt-1">${legalityHtml}</div>` : ''}
                             </div>
                         </div>
-                        <button class="remove-from-inventory-btn bg-white/5 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-bold py-1 px-3 rounded-lg text-xs transition-colors border border-red-500/20" data-card-id="${card.id}" data-foil="${card.isFoil}">DEL</button>
+                        <div class="flex gap-1 flex-shrink-0">
+                            <button class="move-btn bg-white/5 hover:bg-purple-500/20 text-purple-400 font-bold py-1 px-2 rounded-lg text-[9px] transition-colors border border-purple-500/20" data-inv-id="${card.inventoryId}">MOV</button>
+                            <button class="remove-from-inventory-btn bg-white/5 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-bold py-1 px-2 rounded-lg text-[9px] transition-colors border border-red-500/20" data-card-id="${card.id}" data-foil="${card.isFoil}">DEL</button>
+                        </div>
                     `;
+
+                    // Detail popover from thumbnail
+                    inventoryItem.querySelector('[data-inv-detail]').addEventListener('click', () => openCardDetail(card));
+
+                    // Inline quantity edit
+                    inventoryItem.querySelector('.inline-qty').addEventListener('change', (e) => {
+                        const newQty = parseInt(e.target.value) || 0;
+                        pushUndoState('Edit qty ' + card.name);
+                        if (newQty <= 0) {
+                            const idx = currentInventory.findIndex(c => c.inventoryId === card.inventoryId);
+                            if (idx > -1) currentInventory.splice(idx, 1);
+                        } else {
+                            card.quantity = newQty;
+                        }
+                        updateInventoryDisplay();
+                        updateCardQuantityInSearchResults(card.id);
+                    });
+
+                    // Move button
+                    inventoryItem.querySelector('.move-btn').addEventListener('click', () => moveCard(card));
+
                     inventoryItem.querySelector('.remove-from-inventory-btn').addEventListener('click', (e) => {
                         const isFoil = e.target.dataset.foil === 'true';
                         removeFromInventory(e.target.dataset.cardId, isFoil);
@@ -973,6 +1620,9 @@
 
             function saveCollections() {
                 localStorage.setItem('mtgCollections', JSON.stringify(collections));
+                localStorage.setItem('mtgCollectionMeta', JSON.stringify(collectionMeta));
+                recordPriceSnapshot();
+                updatePriceChart();
                 showMessage('Saved to local storage');
             }
 
@@ -983,6 +1633,10 @@
                 } else {
                     collections = { 'Main Collection': [] };
                 }
+
+                // Load wishlist meta
+                const savedMeta = localStorage.getItem('mtgCollectionMeta');
+                if (savedMeta) collectionMeta = JSON.parse(savedMeta);
 
                 const needsSave = await migrateCollections(collections);
                 if (needsSave) {
@@ -998,6 +1652,7 @@
 
                 updateCollectionSelector();
                 updateInventoryDisplay();
+                updatePriceChart();
             }
 
             async function updateCollectionPrices() {
@@ -1005,7 +1660,7 @@
                     showMessage("Collection is empty");
                     return;
                 }
-
+                pushUndoState('Sync prices');
                 const collection = collections[activeCollectionName];
                 const ids = [...new Set(collection.map(c => c.id))].map(id => ({ id }));
 
@@ -1115,9 +1770,12 @@
             function createCollection() {
                 const newName = newCollectionNameInput.value.trim();
                 if (newName && !collections[newName]) {
+                    pushUndoState('Create ' + newName);
                     collections[newName] = [];
+                    collectionMeta[newName] = { type: collectionTypeSelector.value };
                     activeCollectionName = newName;
                     newCollectionNameInput.value = '';
+                    collectionTypeSelector.value = 'collection';
                     updateCollectionSelector();
                     updateInventoryDisplay();
                     showMessage(`Collection "${newName}" created`);
@@ -1139,6 +1797,12 @@
                         showMessage(`"${newName}" already exists`);
                         return;
                     }
+                    pushUndoState('Rename ' + activeCollectionName);
+                    // Transfer meta
+                    if (collectionMeta[activeCollectionName]) {
+                        collectionMeta[newName] = collectionMeta[activeCollectionName];
+                        delete collectionMeta[activeCollectionName];
+                    }
                     Object.defineProperty(collections, newName,
                         Object.getOwnPropertyDescriptor(collections, activeCollectionName));
                     delete collections[activeCollectionName];
@@ -1150,54 +1814,78 @@
                 }
             }
 
-            function exportCollectionToTxt() {
+            function handleExport(format) {
                 if (!activeCollectionName || !collections[activeCollectionName] || collections[activeCollectionName].length === 0) {
                     showMessage("Nothing to export");
                     return;
                 }
-
                 const collection = collections[activeCollectionName];
-                let totalCards = 0;
-                let totalValue = 0;
-                let txtContent = `${activeCollectionName}\n`;
-
-                collection.forEach(card => {
-                    totalCards += card.quantity;
-                    const price = parseFloat(card.isFoil ? card.prices[`${currentCurrency}_foil`] : card.prices[currentCurrency]) || 0;
-                    totalValue += price * card.quantity;
-                });
-
-                txtContent += `Total Cards: ${totalCards}\n`;
-                txtContent += `Total Value: ${getCurrencySymbol()}${totalValue.toFixed(2)}\n\n`;
-
-                collection.forEach(card => {
-                    const setCode = card.set ? card.set.toUpperCase() : '';
-                    const collectorNumber = card.collector_number || '';
-                    const rarity = card.rarity ? card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1) : '';
-                    const foilText = card.isFoil ? ' (Foil)' : '';
-                    const price = parseFloat(card.isFoil ? card.prices[currentCurrency + '_foil'] : card.prices[currentCurrency]) || 0;
-                    const formattedPrice = `${getCurrencySymbol()}${price.toFixed(2)}`;
-
-                    let details = [];
-                    if (setCode) details.push(setCode);
-                    if (collectorNumber) details.push(`#${collectorNumber}`);
-                    if (rarity) details.push(rarity);
-
-                    let detailsString = details.length > 0 ? ` (${details.join(' - ')})` : '';
-
-                    txtContent += `${card.quantity}x ${card.name}${foilText}${detailsString} - ${formattedPrice}\n`;
-                });
-
-                const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
                 const safeFileName = activeCollectionName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+                if (format === 'share') {
+                    generateShareLink();
+                    return;
+                }
+
+                let content = '';
+                let mimeType = 'text/plain';
+                let ext = 'txt';
+
+                if (format === 'txt') {
+                    let totalCards = 0, totalValue = 0;
+                    collection.forEach(card => {
+                        totalCards += card.quantity;
+                        const price = parseFloat(card.isFoil ? card.prices[`${currentCurrency}_foil`] : card.prices[currentCurrency]) || 0;
+                        totalValue += price * card.quantity;
+                    });
+                    content = `${activeCollectionName}\nTotal Cards: ${totalCards}\nTotal Value: ${getCurrencySymbol()}${totalValue.toFixed(2)}\n\n`;
+                    collection.forEach(card => {
+                        const setCode = card.set ? card.set.toUpperCase() : '';
+                        const collectorNumber = card.collector_number || '';
+                        const rarity = card.rarity ? card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1) : '';
+                        const foilText = card.isFoil ? ' (Foil)' : '';
+                        const price = parseFloat(card.isFoil ? card.prices[currentCurrency + '_foil'] : card.prices[currentCurrency]) || 0;
+                        let details = [];
+                        if (setCode) details.push(setCode);
+                        if (collectorNumber) details.push(`#${collectorNumber}`);
+                        if (rarity) details.push(rarity);
+                        let detailsString = details.length > 0 ? ` (${details.join(' - ')})` : '';
+                        content += `${card.quantity}x ${card.name}${foilText}${detailsString} - ${getCurrencySymbol()}${price.toFixed(2)}\n`;
+                    });
+                } else if (format === 'moxfield') {
+                    collection.forEach(card => {
+                        const setCode = (card.set || '').toUpperCase();
+                        const num = card.collector_number || '';
+                        const foil = card.isFoil ? ' *F*' : '';
+                        content += `${card.quantity} ${card.name} (${setCode}) ${num}${foil}\n`;
+                    });
+                } else if (format === 'archidekt') {
+                    collection.forEach(card => {
+                        const setCode = (card.set || '').toUpperCase();
+                        const foil = card.isFoil ? ' *foil*' : '';
+                        content += `${card.quantity}x ${card.name} [${setCode}]${foil}\n`;
+                    });
+                } else if (format === 'csv') {
+                    ext = 'csv';
+                    mimeType = 'text/csv';
+                    content = 'Name,Set,Rarity,Quantity,Foil,Price,Value,Colors,Type,CMC\n';
+                    collection.forEach(card => {
+                        const price = parseFloat(card.isFoil ? card.prices[`${currentCurrency}_foil`] : card.prices[currentCurrency]) || 0;
+                        const colors = (card.color_identity || []).join('');
+                        const name = `"${card.name.replace(/"/g, '""')}"`;
+                        content += `${name},${(card.set||'').toUpperCase()},${card.rarity||''},${card.quantity},${card.isFoil},${price.toFixed(2)},${(price*card.quantity).toFixed(2)},${colors},"${(card.type_line||'').replace(/"/g,'""')}",${card.cmc||0}\n`;
+                    });
+                }
+
+                const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = `${safeFileName}_data.txt`;
+                link.download = `${safeFileName}_${format}.${ext}`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
-                showMessage("Exported to file");
+                showMessage(`Exported as ${format.toUpperCase()}`);
             }
 
             function deleteCollection() {
@@ -1207,6 +1895,8 @@
                     return;
                 }
                 if (confirm(`Delete "${activeCollectionName}"? This cannot be undone.`)) {
+                    pushUndoState('Delete ' + activeCollectionName);
+                    delete collectionMeta[activeCollectionName];
                     delete collections[activeCollectionName];
                     const remainingNames = Object.keys(collections);
                     if (remainingNames.length > 0) {
@@ -1226,6 +1916,7 @@
                 activeCollectionName = e.target.value;
                 updateInventoryDisplay();
                 filterAndSortAndDisplayResults();
+                updatePriceChart();
             }
 
             function updateCollectionSelector() {
@@ -1233,7 +1924,9 @@
                 Object.keys(collections).forEach(name => {
                     const option = document.createElement('option');
                     option.value = name;
-                    option.textContent = name;
+                    const meta = collectionMeta[name] || {};
+                    const prefix = meta.type === 'wishlist' ? '[W] ' : '';
+                    option.textContent = prefix + name;
                     if (name === activeCollectionName) {
                         option.selected = true;
                     }
@@ -1301,16 +1994,44 @@
                     uniqueCards.forEach(item => {
                         const card = item.cardData;
                         const totalQuantity = item.totalQuantity;
+                        const isDfc = card.card_faces && card.card_faces.length >= 2 && card.card_faces[0].image_uris && card.card_faces[1].image_uris;
                         const container = document.createElement('div');
                         container.className = 'relative group';
-                        const img = document.createElement('img');
-                        img.src = getCardImage(card, 'normal');
-                        img.className = 'w-full h-auto rounded-lg border border-transparent group-hover:border-purple-500/40 transition-all';
+
+                        if (isDfc) {
+                            container.innerHTML = `
+                                <div class="card-flip-container">
+                                    <div class="card-flip-inner" data-flip-inner>
+                                        <div class="card-flip-front">
+                                            <img src="${card.card_faces[0].image_uris.normal}" class="w-full h-auto rounded-lg border border-transparent group-hover:border-purple-500/40 transition-all cursor-pointer" data-vdetail>
+                                        </div>
+                                        <div class="card-flip-back">
+                                            <img src="${card.card_faces[1].image_uris.normal}" class="w-full h-auto rounded-lg">
+                                        </div>
+                                    </div>
+                                    <div class="flip-icon" data-flip>↻</div>
+                                </div>`;
+                            container.querySelector('[data-flip]').addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                container.querySelector('[data-flip-inner]').classList.toggle('flipped');
+                            });
+                        } else {
+                            const img = document.createElement('img');
+                            img.src = getCardImage(card, 'normal');
+                            img.className = 'w-full h-auto rounded-lg border border-transparent group-hover:border-purple-500/40 transition-all cursor-pointer';
+                            img.setAttribute('data-vdetail', '');
+                            container.appendChild(img);
+                        }
+
                         const quantityBadge = document.createElement('div');
-                        quantityBadge.className = 'absolute top-0 right-0 bg-black/70 text-slate-200 text-sm font-bold px-2 py-1 rounded-bl-lg border-l border-b border-white/10 backdrop-blur-sm';
+                        quantityBadge.className = 'absolute top-0 right-0 bg-black/70 text-slate-200 text-sm font-bold px-2 py-1 rounded-bl-lg border-l border-b border-white/10 backdrop-blur-sm z-10';
                         quantityBadge.textContent = `${totalQuantity}`;
-                        container.appendChild(img);
                         container.appendChild(quantityBadge);
+
+                        // Detail click
+                        const detailTarget = container.querySelector('[data-vdetail]');
+                        if (detailTarget) detailTarget.addEventListener('click', () => openCardDetail(card));
+
                         visualViewGrid.appendChild(container);
                     });
                 }
@@ -1544,7 +2265,7 @@
                     importStatus.textContent = "No input data";
                     return;
                 }
-
+                pushUndoState('Import cards');
                 processImportBtn.disabled = true;
                 cancelImportBtn.disabled = true;
                 importErrors.innerHTML = '';
@@ -1626,7 +2347,7 @@
                                     c.collector_number.toLowerCase() === p.collectorNumber.toLowerCase()
                                 );
                                 if (card) {
-                                    addToInventory(card, p.quantity, p.isFoil);
+                                    addToInventory(card, p.quantity, p.isFoil, true);
                                     successes++;
                                 } else {
                                     errors.push(`Not found: "${p.cardName}" (${p.setCode.toUpperCase()} #${p.collectorNumber})`);
@@ -1658,7 +2379,7 @@
                     }
 
                     if (foundCard) {
-                        addToInventory(foundCard, p.quantity, p.isFoil);
+                        addToInventory(foundCard, p.quantity, p.isFoil, true);
                         successes++;
                     } else {
                         errors.push(`Not found: "${p.cardName}" (no set info — search a set first)`);
@@ -1678,6 +2399,500 @@
                     processImportBtn.disabled = false;
                     cancelImportBtn.disabled = false;
                 }, 3500);
+            }
+
+            // ===== UNDO / REDO =====
+            function pushUndoState(label) {
+                undoStack.push({
+                    label,
+                    collections: JSON.parse(JSON.stringify(collections)),
+                    activeCollectionName,
+                    collectionMeta: JSON.parse(JSON.stringify(collectionMeta))
+                });
+                if (undoStack.length > MAX_UNDO) undoStack.shift();
+                redoStack = [];
+            }
+
+            function undo() {
+                if (undoStack.length === 0) { showMessage('Nothing to undo'); return; }
+                redoStack.push({
+                    label: 'redo',
+                    collections: JSON.parse(JSON.stringify(collections)),
+                    activeCollectionName,
+                    collectionMeta: JSON.parse(JSON.stringify(collectionMeta))
+                });
+                const state = undoStack.pop();
+                collections = state.collections;
+                activeCollectionName = state.activeCollectionName;
+                collectionMeta = state.collectionMeta;
+                updateCollectionSelector();
+                updateInventoryDisplay();
+                filterAndSortAndDisplayResults();
+                showMessage(`Undo: ${state.label}`);
+            }
+
+            function redo() {
+                if (redoStack.length === 0) { showMessage('Nothing to redo'); return; }
+                undoStack.push({
+                    label: 'undo',
+                    collections: JSON.parse(JSON.stringify(collections)),
+                    activeCollectionName,
+                    collectionMeta: JSON.parse(JSON.stringify(collectionMeta))
+                });
+                const state = redoStack.pop();
+                collections = state.collections;
+                activeCollectionName = state.activeCollectionName;
+                collectionMeta = state.collectionMeta;
+                updateCollectionSelector();
+                updateInventoryDisplay();
+                filterAndSortAndDisplayResults();
+                showMessage('Redo');
+            }
+
+            // ===== KEYBOARD HELPERS =====
+            function closeTopmostModal() {
+                const modals = [cardDetailModal, statsModal, dupesModal, importModal, visualViewModal, photoStudioModal, ebayViewModal];
+                for (const m of modals) {
+                    if (!m.classList.contains('hidden')) { m.classList.add('hidden'); return; }
+                }
+                if (!exportDropdown.classList.contains('hidden')) exportDropdown.classList.add('hidden');
+            }
+
+            function getFilteredCount() {
+                let f = currentSearchResults;
+                const ft = filterInput.value.toLowerCase();
+                if (ft) f = f.filter(c => c.name.toLowerCase().includes(ft));
+                const r = filterRarity.value;
+                if (r) f = f.filter(c => c.rarity === r);
+                const t = filterType.value;
+                if (t) f = f.filter(c => c.type_line && c.type_line.toLowerCase().includes(t));
+                const cmin = parseFloat(filterCmcMin.value);
+                if (!isNaN(cmin)) f = f.filter(c => (c.cmc||0) >= cmin);
+                const cmax = parseFloat(filterCmcMax.value);
+                if (!isNaN(cmax)) f = f.filter(c => (c.cmc||0) <= cmax);
+                if (activeColorFilters.size > 0) f = f.filter(c => [...activeColorFilters].every(cl => (c.color_identity||[]).includes(cl)));
+                return f.length;
+            }
+
+            // ===== AUTOCOMPLETE =====
+            async function fetchAutocomplete(q) {
+                try {
+                    const resp = await fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(q)}`);
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    if (!data.data || data.data.length === 0) { autocompleteDropdown.classList.add('hidden'); return; }
+                    autocompleteDropdown.innerHTML = '';
+                    data.data.slice(0, 10).forEach(name => {
+                        const item = document.createElement('div');
+                        item.className = 'ac-item';
+                        item.textContent = name;
+                        item.addEventListener('click', () => {
+                            cardNameSearch.value = name;
+                            autocompleteDropdown.classList.add('hidden');
+                            searchByCardName(name);
+                        });
+                        autocompleteDropdown.appendChild(item);
+                    });
+                    autocompleteDropdown.classList.remove('hidden');
+                } catch (e) { console.error('Autocomplete error:', e); }
+            }
+
+            async function searchByCardName(name) {
+                showLoader(true);
+                showMessage('Searching all prints...');
+                searchResultsContainer.innerHTML = '';
+                currentSearchResults = [];
+                currentPage = 1;
+                try {
+                    let allCards = [];
+                    let url = `https://api.scryfall.com/cards/search?unique=prints&q=!"${encodeURIComponent(name)}"`;
+                    while (url) {
+                        const resp = await fetch(url);
+                        if (!resp.ok) throw new Error(`Not found`);
+                        const data = await resp.json();
+                        allCards = allCards.concat(data.data);
+                        url = data.has_more ? data.next_page : null;
+                        await new Promise(r => setTimeout(r, 100));
+                    }
+                    currentSearchResults = allCards;
+                    filterAndSortAndDisplayResults();
+                    showMessage(`Found ${allCards.length} prints of "${name}"`);
+                } catch (e) {
+                    showMessage(`Search failed: ${e.message}`);
+                } finally {
+                    showLoader(false);
+                }
+            }
+
+            // ===== CARD DETAIL POPOVER =====
+            async function openCardDetail(card) {
+                const nameEl = document.getElementById('detailCardName');
+                const imgEl = document.getElementById('detailCardImage');
+                const imgBackEl = document.getElementById('detailCardImageBack');
+                const typeEl = document.getElementById('detailTypeLine');
+                const oracleEl = document.getElementById('detailOracleText');
+                const manaEl = document.getElementById('detailManaCost');
+                const legalEl = document.getElementById('detailLegalities');
+                const rulingsDiv = document.getElementById('detailRulings');
+                const rulingsList = document.getElementById('detailRulingsList');
+
+                detailFlipInner.classList.remove('flipped');
+                const isDfc = card.card_faces && card.card_faces.length >= 2 && card.card_faces[0].image_uris && card.card_faces[1].image_uris;
+
+                nameEl.textContent = card.name;
+                imgEl.src = isDfc ? card.card_faces[0].image_uris.normal : getCardImage(card, 'normal');
+
+                if (isDfc) {
+                    imgBackEl.src = card.card_faces[1].image_uris.normal;
+                    detailFlipBtn.classList.remove('hidden');
+                } else {
+                    detailFlipBtn.classList.add('hidden');
+                }
+
+                // Type line
+                typeEl.textContent = isDfc ? card.card_faces[0].type_line : (card.type_line || '');
+
+                // Mana cost
+                const manaCost = isDfc ? (card.card_faces[0].mana_cost || '') : (card.mana_cost || '');
+                manaEl.innerHTML = renderManaCost(manaCost);
+
+                // Oracle text
+                if (isDfc) {
+                    oracleEl.textContent = (card.card_faces[0].oracle_text || '') + '\n---\n' + (card.card_faces[1].oracle_text || '');
+                } else {
+                    oracleEl.textContent = card.oracle_text || '';
+                }
+
+                // Legalities
+                legalEl.innerHTML = '';
+                if (card.legalities) {
+                    const fmtMap = {standard:'STD',modern:'MOD',commander:'CMD',pioneer:'PIO',legacy:'LEG',vintage:'VIN',pauper:'PAU',historic:'HIS',brawl:'BRL'};
+                    Object.entries(fmtMap).forEach(([k,v]) => {
+                        const status = card.legalities[k];
+                        let color = 'bg-red-500/20 text-red-400 border-red-500/30';
+                        if (status === 'legal') color = 'bg-green-500/20 text-green-400 border-green-500/30';
+                        else if (status === 'restricted') color = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+                        else if (status === 'banned') color = 'bg-red-500/20 text-red-400 border-red-500/30';
+                        else color = 'bg-white/5 text-slate-500 border-white/10';
+                        legalEl.innerHTML += `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${color}">${v}</span>`;
+                    });
+                }
+
+                // Rulings
+                rulingsDiv.classList.add('hidden');
+                rulingsList.innerHTML = '';
+                cardDetailModal.classList.remove('hidden');
+
+                if (card.rulings_uri) {
+                    try {
+                        const resp = await fetch(card.rulings_uri);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            if (data.data && data.data.length > 0) {
+                                rulingsDiv.classList.remove('hidden');
+                                data.data.slice(0, 10).forEach(r => {
+                                    rulingsList.innerHTML += `<div class="p-2 bg-white/5 rounded text-xs text-slate-400"><span class="text-slate-600 mr-2">${r.published_at}</span>${r.comment}</div>`;
+                                });
+                            }
+                        }
+                    } catch (e) { /* rulings fetch failed, non-critical */ }
+                }
+            }
+
+            function renderManaCost(cost) {
+                if (!cost) return '';
+                const colors = { W:'#F9FAF4;color:#333', U:'#0E68AB;color:#fff', B:'#150B00;color:#fff', R:'#D3202A;color:#fff', G:'#00733E;color:#fff', C:'#CAC5C0;color:#333' };
+                return cost.replace(/\{([^}]+)\}/g, (_, sym) => {
+                    const bg = colors[sym] || '#CAC5C0;color:#333';
+                    return `<span class="mana-symbol" style="background:${bg}">${sym}</span>`;
+                });
+            }
+
+            // ===== STATS DASHBOARD =====
+            function openStatsModal() {
+                if (!activeCollectionName || !collections[activeCollectionName] || collections[activeCollectionName].length === 0) {
+                    showMessage("Collection is empty"); return;
+                }
+                const coll = collections[activeCollectionName];
+                let totalVal = 0, totalQty = 0, uniqueCards = new Set();
+                const rarityCounts = {common:0,uncommon:0,rare:0,mythic:0};
+                const colorCounts = {W:0,U:0,B:0,R:0,G:0,C:0};
+                const setCounts = {};
+
+                coll.forEach(card => {
+                    const price = parseFloat(card.isFoil ? card.prices[`${currentCurrency}_foil`] : card.prices[currentCurrency]) || 0;
+                    totalVal += price * card.quantity;
+                    totalQty += card.quantity;
+                    uniqueCards.add(card.id);
+                    if (card.rarity && rarityCounts[card.rarity] !== undefined) rarityCounts[card.rarity] += card.quantity;
+                    const ci = card.color_identity || [];
+                    if (ci.length === 0) colorCounts.C += card.quantity;
+                    else ci.forEach(c => { if (colorCounts[c] !== undefined) colorCounts[c] += card.quantity; });
+                    const setName = card.set_name || card.set || '???';
+                    setCounts[setName] = (setCounts[setName] || 0) + card.quantity;
+                });
+
+                const avgVal = uniqueCards.size > 0 ? (totalVal / uniqueCards.size) : 0;
+
+                let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-white/5 rounded-lg p-3 border border-white/10 text-center"><p class="text-[10px] text-slate-500 font-mono">TOTAL VALUE</p><p class="text-lg font-bold text-green-400">${getCurrencySymbol()}${totalVal.toFixed(2)}</p></div>
+                    <div class="bg-white/5 rounded-lg p-3 border border-white/10 text-center"><p class="text-[10px] text-slate-500 font-mono">TOTAL CARDS</p><p class="text-lg font-bold text-slate-200">${totalQty}</p></div>
+                    <div class="bg-white/5 rounded-lg p-3 border border-white/10 text-center"><p class="text-[10px] text-slate-500 font-mono">UNIQUE</p><p class="text-lg font-bold text-purple-400">${uniqueCards.size}</p></div>
+                    <div class="bg-white/5 rounded-lg p-3 border border-white/10 text-center"><p class="text-[10px] text-slate-500 font-mono">AVG VALUE</p><p class="text-lg font-bold text-slate-300">${getCurrencySymbol()}${avgVal.toFixed(2)}</p></div>
+                </div>`;
+
+                // Rarity bars
+                const maxRarity = Math.max(...Object.values(rarityCounts), 1);
+                const rarityColors = {common:'#9ca3af',uncommon:'#60a5fa',rare:'#facc15',mythic:'#f97316'};
+                html += `<h3 class="text-xs font-mono text-slate-500 mb-2 tracking-wider">RARITY BREAKDOWN</h3>`;
+                Object.entries(rarityCounts).forEach(([r, cnt]) => {
+                    const pct = (cnt / maxRarity * 100).toFixed(0);
+                    html += `<div class="stat-bar-container"><div class="stat-bar-label"><span>${r.charAt(0).toUpperCase()+r.slice(1)}</span><span>${cnt}</span></div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${rarityColors[r]}"></div></div></div>`;
+                });
+
+                // Color bars
+                const maxColor = Math.max(...Object.values(colorCounts), 1);
+                const colorStyles = {W:'#F9FAF4',U:'#0E68AB',B:'#555',R:'#D3202A',G:'#00733E',C:'#CAC5C0'};
+                html += `<h3 class="text-xs font-mono text-slate-500 mb-2 mt-4 tracking-wider">COLOR BREAKDOWN</h3>`;
+                Object.entries(colorCounts).forEach(([c, cnt]) => {
+                    const pct = (cnt / maxColor * 100).toFixed(0);
+                    html += `<div class="stat-bar-container"><div class="stat-bar-label"><span>${c}</span><span>${cnt}</span></div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${colorStyles[c]}"></div></div></div>`;
+                });
+
+                // Top 10 sets
+                const topSets = Object.entries(setCounts).sort((a,b) => b[1]-a[1]).slice(0, 10);
+                const maxSet = topSets.length > 0 ? topSets[0][1] : 1;
+                html += `<h3 class="text-xs font-mono text-slate-500 mb-2 mt-4 tracking-wider">TOP SETS</h3>`;
+                topSets.forEach(([s, cnt]) => {
+                    const pct = (cnt / maxSet * 100).toFixed(0);
+                    html += `<div class="stat-bar-container"><div class="stat-bar-label"><span class="truncate max-w-[200px]">${s}</span><span>${cnt}</span></div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:#8b5cf6"></div></div></div>`;
+                });
+
+                statsBody.innerHTML = html;
+
+                // Color wheel (Chart.js doughnut)
+                const cwCanvas = document.getElementById('colorWheelChart');
+                const existingChart = Chart.getChart(cwCanvas);
+                if (existingChart) existingChart.destroy();
+                new Chart(cwCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['White','Blue','Black','Red','Green','Colorless'],
+                        datasets: [{
+                            data: [colorCounts.W, colorCounts.U, colorCounts.B, colorCounts.R, colorCounts.G, colorCounts.C],
+                            backgroundColor: ['#F9FAF4','#0E68AB','#555555','#D3202A','#00733E','#CAC5C0'],
+                            borderColor: 'rgba(15,15,25,0.9)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Share Tech Mono', size: 11 } } }
+                        }
+                    }
+                });
+
+                statsModal.classList.remove('hidden');
+            }
+
+            // ===== DUPLICATE FINDER =====
+            function openDupesModal() {
+                const allCollNames = Object.keys(collections);
+                if (allCollNames.length < 2) { showMessage("Need 2+ collections to find dupes"); return; }
+
+                const cardLocations = {};
+                allCollNames.forEach(name => {
+                    (collections[name] || []).forEach(card => {
+                        const key = card.name;
+                        if (!cardLocations[key]) cardLocations[key] = {};
+                        if (!cardLocations[key][name]) cardLocations[key][name] = 0;
+                        cardLocations[key][name] += card.quantity;
+                    });
+                });
+
+                const dupes = Object.entries(cardLocations).filter(([_, locs]) => Object.keys(locs).length >= 2);
+                dupes.sort((a, b) => a[0].localeCompare(b[0]));
+
+                let html = '';
+                if (dupes.length === 0) {
+                    html = '<p class="text-slate-500 font-mono text-sm text-center py-8">No duplicates found across collections</p>';
+                } else {
+                    html = `<p class="text-xs text-slate-500 font-mono mb-4">${dupes.length} cards found in multiple collections</p>`;
+                    dupes.forEach(([name, locs]) => {
+                        html += `<div class="bg-white/5 rounded-lg p-3 border border-white/10 mb-2"><p class="font-semibold text-slate-200 text-sm font-mono">${name}</p><div class="mt-1">`;
+                        Object.entries(locs).forEach(([coll, qty]) => {
+                            html += `<span class="inline-block mr-2 text-xs font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">${coll}: ${qty}x</span>`;
+                        });
+                        html += `</div></div>`;
+                    });
+                }
+                dupesBody.innerHTML = html;
+                dupesModal.classList.remove('hidden');
+            }
+
+            // ===== MOVE CARD =====
+            function moveCard(card) {
+                const otherCollections = Object.keys(collections).filter(n => n !== activeCollectionName);
+                if (otherCollections.length === 0) { showMessage("No other collections"); return; }
+                const target = prompt(`Move "${card.name}" to:\n\n${otherCollections.map((n,i) => `${i+1}. ${n}`).join('\n')}\n\nEnter collection name:`);
+                if (!target || !collections[target]) { if (target) showMessage("Collection not found"); return; }
+                pushUndoState('Move ' + card.name);
+                // Remove from current
+                const srcInv = collections[activeCollectionName];
+                const srcIdx = srcInv.findIndex(c => c.inventoryId === card.inventoryId);
+                if (srcIdx === -1) return;
+                const movedCard = srcInv.splice(srcIdx, 1)[0];
+                // Add to target
+                const tgtInv = collections[target];
+                const tgtId = movedCard.id + (movedCard.isFoil ? '_foil' : '_normal');
+                const existing = tgtInv.find(c => c.inventoryId === tgtId);
+                if (existing) {
+                    existing.quantity += movedCard.quantity;
+                } else {
+                    tgtInv.push({ ...movedCard, inventoryId: tgtId });
+                }
+                updateInventoryDisplay();
+                updateCardQuantityInSearchResults(card.id);
+                showMessage(`Moved to "${target}"`);
+            }
+
+            // ===== SHARE LINK =====
+            function generateShareLink() {
+                const coll = collections[activeCollectionName];
+                if (!coll || coll.length === 0) { showMessage("Nothing to share"); return; }
+                const minimal = coll.map(c => ({ s: c.set, n: c.collector_number, q: c.quantity, f: c.isFoil ? 1 : 0 }));
+                const json = JSON.stringify(minimal);
+                const compressed = LZString.compressToEncodedURIComponent(json);
+                const url = window.location.origin + window.location.pathname + '#share=' + compressed;
+                navigator.clipboard.writeText(url).then(() => {
+                    showMessage("Share link copied to clipboard");
+                }).catch(() => {
+                    prompt("Copy this share link:", url);
+                });
+            }
+
+            async function checkShareLink() {
+                const hash = window.location.hash;
+                if (!hash.startsWith('#share=')) return;
+                const compressed = hash.substring(7);
+                try {
+                    const json = LZString.decompressFromEncodedURIComponent(compressed);
+                    const cards = JSON.parse(json);
+                    if (!Array.isArray(cards) || cards.length === 0) return;
+
+                    showLoader(true);
+                    showMessage('Loading shared collection...');
+
+                    const collName = `Shared ${new Date().toLocaleDateString()}`;
+                    collections[collName] = [];
+                    activeCollectionName = collName;
+
+                    const identifiers = cards.map(c => ({ set: c.s, collector_number: String(c.n) }));
+                    const CHUNK = 75;
+                    const cardMap = new Map();
+
+                    for (let i = 0; i < identifiers.length; i += CHUNK) {
+                        const chunk = identifiers.slice(i, i + CHUNK);
+                        const resp = await fetch('https://api.scryfall.com/cards/collection', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ identifiers: chunk })
+                        });
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            (data.data || []).forEach(c => cardMap.set(c.set + '|' + c.collector_number, c));
+                        }
+                        await new Promise(r => setTimeout(r, 100));
+                    }
+
+                    cards.forEach(c => {
+                        const key = c.s + '|' + String(c.n);
+                        const fullCard = cardMap.get(key);
+                        if (fullCard) {
+                            const isFoil = !!c.f;
+                            const invId = fullCard.id + (isFoil ? '_foil' : '_normal');
+                            collections[collName].push({ ...fullCard, quantity: c.q, isFoil, inventoryId: invId });
+                        }
+                    });
+
+                    updateCollectionSelector();
+                    updateInventoryDisplay();
+                    saveCollections();
+                    history.replaceState(null, '', window.location.pathname);
+                    showMessage(`Imported shared collection: ${collName}`);
+                } catch (e) {
+                    console.error('Share link error:', e);
+                    showMessage('Invalid share link');
+                } finally {
+                    showLoader(false);
+                }
+            }
+
+            // ===== PRICE HISTORY =====
+            function recordPriceSnapshot() {
+                const history = JSON.parse(localStorage.getItem('mtgPriceHistory') || '{}');
+                const today = new Date().toISOString().split('T')[0];
+
+                Object.keys(collections).forEach(name => {
+                    if (!history[name]) history[name] = [];
+                    let totalVal = 0;
+                    (collections[name] || []).forEach(card => {
+                        const price = parseFloat(card.isFoil ? card.prices[`${currentCurrency}_foil`] : card.prices[currentCurrency]) || 0;
+                        totalVal += price * card.quantity;
+                    });
+
+                    const existing = history[name].findIndex(e => e.date === today);
+                    if (existing >= 0) {
+                        history[name][existing].value = totalVal;
+                    } else {
+                        history[name].push({ date: today, value: totalVal });
+                    }
+                    if (history[name].length > 365) history[name] = history[name].slice(-365);
+                });
+
+                localStorage.setItem('mtgPriceHistory', JSON.stringify(history));
+            }
+
+            function updatePriceChart() {
+                const history = JSON.parse(localStorage.getItem('mtgPriceHistory') || '{}');
+                const data = history[activeCollectionName];
+
+                if (!data || data.length < 2) {
+                    priceChartContainer.classList.add('hidden');
+                    return;
+                }
+
+                priceChartContainer.classList.remove('hidden');
+                if (priceChartInstance) priceChartInstance.destroy();
+
+                const labels = data.map(d => d.date.slice(5)); // MM-DD
+                const values = data.map(d => d.value);
+
+                priceChartInstance = new Chart(priceHistoryCanvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: values,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: true, ticks: { maxTicksToShow: 5, color: '#475569', font: { size: 9 } }, grid: { display: false } },
+                            y: { display: true, ticks: { color: '#475569', font: { size: 9 }, callback: v => getCurrencySymbol() + v.toFixed(0) }, grid: { color: 'rgba(255,255,255,0.03)' } }
+                        }
+                    }
+                });
             }
 
         });
