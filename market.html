@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTG Card Vault — Market</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: #e2e8f0;
+            --accent: #8b5cf6;
+            --accent-light: #c4b5fd;
+            --accent-rgb: 139,92,246;
+            --accent-light-rgb: 196,181,253;
+            --panel-rgb: 120,100,180;
+            --bg: #0a0a0f;
+            transition: background-color 0.6s ease;
+        }
+        h1, h2, h3, button { font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 0.03em; }
+
+        .clean-panel {
+            background: rgba(20, 20, 35, 0.7);
+            border: 1px solid rgba(120, 100, 180, 0.15);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(10, 10, 15, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb), 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb), 0.5); }
+
+        .loader {
+            border-top-color: var(--accent);
+            border-right-color: var(--accent-light);
+            border-bottom-color: var(--accent);
+            border-left-color: var(--accent-light);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ===== MANA THEME SYSTEM ===== */
+        .mana-orb {
+            width: 22px; height: 22px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.1);
+            cursor: pointer; transition: all 0.3s ease;
+            position: relative; flex-shrink: 0;
+        }
+        .mana-orb:hover { transform: scale(1.25); border-color: rgba(255,255,255,0.4); }
+        .mana-orb.active { border-color: var(--accent-light); box-shadow: 0 0 14px 3px rgba(var(--accent-rgb), 0.5); transform: scale(1.15); }
+
+        .clean-panel { border-color: rgba(var(--panel-rgb), 0.15) !important; }
+        ::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb), 0.3) !important; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb), 0.5) !important; }
+
+        /* ===== FANTASY LOGO ===== */
+        .logo-main {
+            font-family: 'Cinzel Decorative', serif; font-weight: 900;
+            font-size: clamp(1.4rem, 4vw, 2.5rem); line-height: 1; letter-spacing: 0.02em;
+            background: linear-gradient(180deg, #F6E27A 0%, #D4A843 35%, #B8860B 70%, #8B6914 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; paint-order: stroke fill;
+            -webkit-text-stroke: 1px rgba(120, 60, 0, 0.4);
+            filter: drop-shadow(0 2px 0 #5C3310) drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+        }
+        .logo-sub {
+            font-family: 'Cinzel Decorative', serif; font-weight: 700;
+            font-size: clamp(0.5rem, 1.5vw, 0.8rem); letter-spacing: 0.25em;
+            color: var(--accent-light); text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.4);
+        }
+        body.light-mode .logo-main {
+            filter: drop-shadow(0 2px 0 #A0722C) drop-shadow(0 3px 6px rgba(0,0,0,0.2));
+            -webkit-text-stroke: 1px rgba(120, 60, 0, 0.3);
+        }
+        body.light-mode .logo-sub { color: var(--accent); text-shadow: none; }
+
+        .light-toggle {
+            width: 28px; height: 28px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.15); cursor: pointer;
+            font-size: 12px; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05); transition: all 0.3s ease; flex-shrink: 0;
+        }
+        .light-toggle:hover { transform: scale(1.2); border-color: rgba(255,255,255,0.4); }
+        body.light-mode .light-toggle { border-color: rgba(0,0,0,0.15); background: rgba(0,0,0,0.05); }
+
+        /* ===== MARKET STYLES ===== */
+        .market-ticker {
+            background: rgba(10, 10, 18, 0.95);
+            overflow: hidden;
+            border-bottom: 1px solid rgba(var(--panel-rgb), 0.15);
+        }
+        .ticker-track {
+            animation: tickerScroll 50s linear infinite;
+            white-space: nowrap;
+        }
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .ticker-item {
+            display: inline-flex; align-items: center; gap: 8px;
+            flex-shrink: 0; padding: 0 20px;
+            font-family: 'Share Tech Mono', monospace; font-size: 12px;
+        }
+        .market-card-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px; border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s; cursor: pointer;
+        }
+        .market-card-row:hover {
+            background: rgba(var(--accent-rgb), 0.06);
+            border-color: rgba(var(--accent-rgb), 0.2);
+        }
+        .price-up { color: #22c55e; }
+        .price-down { color: #ef4444; }
+        .sparkline-canvas { display: block; }
+
+        .market-section-header {
+            font-family: 'Share Tech Mono', monospace; font-size: 12px;
+            letter-spacing: 0.1em; color: #64748b; text-transform: uppercase;
+            margin-bottom: 10px; padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(var(--panel-rgb), 0.15);
+            border-radius: 12px; padding: 16px 20px;
+            backdrop-filter: blur(12px);
+        }
+        .stat-card-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px; letter-spacing: 0.12em;
+            color: #64748b; text-transform: uppercase;
+        }
+        .stat-card-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 22px; font-weight: 700;
+            color: #e2e8f0; margin-top: 4px;
+        }
+
+        .valuable-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px; overflow: hidden;
+            transition: all 0.25s; cursor: pointer;
+        }
+        .valuable-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(var(--accent-rgb), 0.15);
+            border-color: rgba(var(--accent-rgb), 0.3);
+        }
+
+        .timeframe-btn {
+            padding: 4px 10px; border-radius: 6px; font-size: 11px;
+            font-family: 'Share Tech Mono', monospace; font-weight: 700;
+            background: rgba(255,255,255,0.05); color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.08); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .timeframe-btn:hover { background: rgba(var(--accent-rgb), 0.15); color: var(--accent-light); }
+        .timeframe-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        .mana-symbol {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 50%;
+            font-size: 11px; font-weight: 700; margin-right: 2px;
+        }
+
+        .modal-overlay {
+            background: rgba(5, 5, 10, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Card Flip */
+        .card-flip-container { perspective: 800px; }
+        .card-flip-inner { position: relative; width: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .card-flip-inner.flipped { transform: rotateY(180deg); }
+        .card-flip-front, .card-flip-back { backface-visibility: hidden; }
+        .card-flip-back { position: absolute; top: 0; left: 0; width: 100%; transform: rotateY(180deg); }
+
+        /* Format Badges */
+        .fmt-badge {
+            display: inline-block; padding: 1px 4px; border-radius: 3px;
+            font-size: 8px; font-weight: 700; font-family: 'Share Tech Mono', monospace;
+            background: rgba(var(--accent-rgb), 0.15); color: var(--accent-light);
+            border: 1px solid rgba(var(--accent-rgb), 0.2); margin-right: 2px;
+        }
+
+        /* Nav */
+        .nav-link {
+            font-family: 'Share Tech Mono', monospace; font-size: 11px;
+            letter-spacing: 0.1em; padding: 6px 16px; border-radius: 8px;
+            text-decoration: none; transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .nav-link.active {
+            background: rgba(var(--accent-rgb), 0.15);
+            color: var(--accent-light);
+            border-color: rgba(var(--accent-rgb), 0.3);
+        }
+        .nav-link:not(.active) {
+            color: #64748b;
+        }
+        .nav-link:not(.active):hover {
+            color: var(--accent-light);
+            background: rgba(var(--accent-rgb), 0.06);
+        }
+
+        /* ===== LIGHT MODE ===== */
+        body.light-mode { color: #1e293b; }
+        body.light-mode .clean-panel { background: rgba(255,255,255,0.75) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.06) !important; }
+        body.light-mode .stat-card { background: rgba(255,255,255,0.8) !important; border-color: rgba(0,0,0,0.08) !important; }
+        body.light-mode .stat-card-value { color: #1e293b !important; }
+        body.light-mode .market-card-row { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.06); }
+        body.light-mode .market-card-row:hover { background: rgba(var(--accent-rgb), 0.04); }
+        body.light-mode .market-ticker { background: rgba(245, 245, 250, 0.95); }
+        body.light-mode .valuable-card { background: rgba(255,255,255,0.8); border-color: rgba(0,0,0,0.06); }
+        body.light-mode .timeframe-btn { background: rgba(0,0,0,0.04); color: #64748b; border-color: rgba(0,0,0,0.08); }
+        body.light-mode .timeframe-btn.active { background: var(--accent); color: #fff; }
+        body.light-mode .market-section-header { border-bottom-color: rgba(0,0,0,0.06); color: #94a3b8; }
+        body.light-mode .modal-overlay { background: rgba(0,0,0,0.25) !important; }
+        body.light-mode #cardDetailModal > div { background: rgba(255,255,255,0.95) !important; }
+        body.light-mode .text-slate-100 { color: #1e293b !important; }
+        body.light-mode .text-slate-200 { color: #334155 !important; }
+        body.light-mode .text-slate-300 { color: #475569 !important; }
+        body.light-mode .text-slate-400 { color: #64748b !important; }
+        body.light-mode .text-slate-500 { color: #94a3b8 !important; }
+        body.light-mode .mana-orb { border-color: rgba(0,0,0,0.12); }
+        body.light-mode .mana-orb:hover { border-color: rgba(0,0,0,0.3); }
+        body.light-mode .nav-link:not(.active) { color: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Header -->
+    <header class="border-b border-white/5">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="flex items-center gap-3 no-underline">
+                    <h1 class="logo-main">MTG Card Vault</h1>
+                </a>
+                <nav class="flex items-center gap-2 ml-4">
+                    <a href="index.html" class="nav-link">COLLECTION</a>
+                    <a href="market.html" class="nav-link active">MARKET</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="mana-orb" data-theme="white" style="background: radial-gradient(circle at 35% 35%, #E8DCCA, #B09470);" title="Plains"></button>
+                <button class="mana-orb" data-theme="blue" style="background: radial-gradient(circle at 35% 35%, #5DADE2, #0E68AB);" title="Island"></button>
+                <button class="mana-orb" data-theme="black" style="background: radial-gradient(circle at 35% 35%, #555, #150B00);" title="Swamp"></button>
+                <button class="mana-orb" data-theme="red" style="background: radial-gradient(circle at 35% 35%, #F1948A, #C0392B);" title="Mountain"></button>
+                <button class="mana-orb" data-theme="green" style="background: radial-gradient(circle at 35% 35%, #58D68D, #00733E);" title="Forest"></button>
+                <span class="text-slate-700 mx-1">|</span>
+                <button id="lightModeToggle" class="light-toggle" title="Toggle light/dark mode">☀</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Ticker -->
+    <div class="market-ticker">
+        <div class="ticker-track flex gap-6 py-2.5 px-4" id="tickerTrack"></div>
+    </div>
+
+    <!-- Stats Hero -->
+    <div class="container mx-auto px-4 py-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="statsBar">
+            <div class="stat-card">
+                <p class="stat-card-label">Cards Tracked</p>
+                <p class="stat-card-value" id="statCards">--</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-card-label">Average Price</p>
+                <p class="stat-card-value" id="statAvg">--</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-card-label">Top Gainer · 7D</p>
+                <p class="stat-card-value price-up text-base" id="statGainer">--</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-card-label">Highest Price</p>
+                <p class="stat-card-value" id="statHighest">--</p>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="marketLoader" class="flex justify-center items-center py-20">
+            <div class="loader ease-linear rounded-full border-4 h-16 w-16"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="marketContent" class="hidden">
+            <!-- Gainers / Losers Side by Side -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                <div>
+                    <h3 class="market-section-header">Top Gainers · 7D</h3>
+                    <div id="gainersColumn" class="space-y-2"></div>
+                </div>
+                <div>
+                    <h3 class="market-section-header">Top Losers · 7D</h3>
+                    <div id="losersColumn" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Most Valuable -->
+            <div class="mb-10">
+                <h3 class="market-section-header">Most Valuable</h3>
+                <div id="valuableGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+            </div>
+
+            <!-- All Cards Table -->
+            <div>
+                <h3 class="market-section-header">All Tracked Cards</h3>
+                <div id="allCardsTable" class="space-y-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Detail Modal -->
+    <div id="cardDetailModal" class="modal-overlay hidden fixed inset-0 flex items-center justify-center p-2 sm:p-4" style="z-index:60;">
+        <div class="rounded-2xl p-5 sm:p-8 w-full max-w-3xl max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl" style="background: rgba(15, 15, 25, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+            <div class="flex justify-between items-start mb-4">
+                <h2 id="detailCardName" class="text-2xl font-bold text-slate-100"></h2>
+                <button id="closeCardDetailBtn" class="text-slate-500 hover:text-red-400 text-3xl leading-none ml-4">&times;</button>
+            </div>
+            <div id="cardDetailBody" class="flex flex-col md:flex-row gap-6">
+                <div class="flex-shrink-0 w-full md:w-64">
+                    <div class="card-flip-container">
+                        <div id="detailFlipInner" class="card-flip-inner">
+                            <div class="card-flip-front"><img id="detailCardImage" class="w-full rounded-lg" src=""></div>
+                            <div class="card-flip-back"><img id="detailCardImageBack" class="w-full rounded-lg" src=""></div>
+                        </div>
+                    </div>
+                    <button id="detailFlipBtn" class="hidden mt-2 w-full bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-1 px-3 rounded-lg text-xs border border-white/10">FLIP CARD</button>
+                </div>
+                <div class="flex-grow space-y-4">
+                    <div id="detailManaCost" class="flex items-center gap-1 flex-wrap"></div>
+                    <p id="detailTypeLine" class="text-sm text-slate-400 font-mono border-b border-white/10 pb-2"></p>
+                    <div id="detailOracleText" class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed"></div>
+                    <div id="detailLegalities" class="flex flex-wrap gap-1 pt-2 border-t border-white/10"></div>
+                    <div id="detailRulings" class="pt-2 border-t border-white/10 space-y-2 hidden">
+                        <p class="text-xs font-mono text-slate-500 tracking-wider">RULINGS</p>
+                        <div id="detailRulingsList" class="space-y-2 text-xs text-slate-400"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="detailPriceSection" class="mt-4 border-t border-white/10 pt-4 hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <span id="detailCurrentPrice" class="text-xl font-bold font-mono text-green-400"></span>
+                        <span id="detailPriceChange" class="ml-2 text-sm font-mono"></span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button class="timeframe-btn active" data-days="7">1W</button>
+                        <button class="timeframe-btn" data-days="30">1M</button>
+                        <button class="timeframe-btn" data-days="90">3M</button>
+                        <button class="timeframe-btn" data-days="365">1Y</button>
+                    </div>
+                </div>
+                <div class="flex gap-4 text-xs font-mono text-slate-500 mb-2">
+                    <span>H: <span id="detailPriceHigh" class="text-slate-300"></span></span>
+                    <span>L: <span id="detailPriceLow" class="text-slate-300"></span></span>
+                    <span>AVG: <span id="detailPriceAvg" class="text-slate-300"></span></span>
+                </div>
+                <div style="height:180px;"><canvas id="detailPriceChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ===== THEME SYSTEM =====
+            const manaThemes = {
+                default: { accent: '#8b5cf6', accentRgb: '139,92,246', accentLight: '#c4b5fd', accentLightRgb: '196,181,253', panelRgb: '120,100,180', bg: '#0a0a0f', bgLight: '#F0EDF5' },
+                white:   { accent: '#C2A878', accentRgb: '194,168,120', accentLight: '#DDD0B5', accentLightRgb: '221,208,181', panelRgb: '170,150,120', bg: '#100e08', bgLight: '#F5F0E8' },
+                blue:    { accent: '#1A7BBD', accentRgb: '26,123,189', accentLight: '#7CB5D9', accentLightRgb: '124,181,217', panelRgb: '60,110,170', bg: '#080a10', bgLight: '#EBF0F5' },
+                black:   { accent: '#7C6B8A', accentRgb: '124,107,138', accentLight: '#B0A0C0', accentLightRgb: '176,160,192', panelRgb: '100,90,120', bg: '#09080c', bgLight: '#EDECE8' },
+                red:     { accent: '#C92A2A', accentRgb: '201,42,42', accentLight: '#E88A8A', accentLightRgb: '232,138,138', panelRgb: '170,80,80', bg: '#100808', bgLight: '#F5EDEB' },
+                green:   { accent: '#2D8B57', accentRgb: '45,139,87', accentLight: '#7DC4A0', accentLightRgb: '125,196,160', panelRgb: '60,130,90', bg: '#081008', bgLight: '#ECF5EE' }
+            };
+            let currentThemeName = 'default';
+
+            function applyTheme(name) {
+                const t = manaThemes[name];
+                if (!t) return;
+                currentThemeName = name;
+                const s = document.body.style;
+                const isLight = document.body.classList.contains('light-mode');
+                s.setProperty('--accent', t.accent);
+                s.setProperty('--accent-light', t.accentLight);
+                s.setProperty('--accent-rgb', t.accentRgb);
+                s.setProperty('--accent-light-rgb', t.accentLightRgb);
+                s.setProperty('--panel-rgb', t.panelRgb);
+                s.setProperty('--bg', isLight ? t.bgLight : t.bg);
+                document.querySelectorAll('.mana-orb').forEach(o => o.classList.remove('active'));
+                document.querySelector(`.mana-orb[data-theme="${name}"]`)?.classList.add('active');
+                localStorage.setItem('mtgTheme', name);
+            }
+
+            function toggleLightMode() {
+                const body = document.body;
+                const toggle = document.getElementById('lightModeToggle');
+                body.classList.toggle('light-mode');
+                const isLight = body.classList.contains('light-mode');
+                toggle.textContent = isLight ? '☾' : '☀';
+                localStorage.setItem('mtgLightMode', isLight ? '1' : '0');
+                const t = manaThemes[currentThemeName];
+                if (t) body.style.setProperty('--bg', isLight ? t.bgLight : t.bg);
+            }
+
+            // Restore theme
+            const savedTheme = localStorage.getItem('mtgTheme');
+            if (savedTheme && manaThemes[savedTheme]) applyTheme(savedTheme);
+            if (localStorage.getItem('mtgLightMode') === '1') toggleLightMode();
+
+            // Theme listeners
+            document.querySelectorAll('.mana-orb').forEach(orb => {
+                orb.addEventListener('click', () => applyTheme(orb.dataset.theme));
+            });
+            document.getElementById('lightModeToggle').addEventListener('click', toggleLightMode);
+
+            // ===== HELPERS =====
+            function getCardImage(card, size = 'normal') {
+                const ph = size === 'small' ? 'https://placehold.co/146x204/1a1a2e/8b5cf6?text=No+Image' : 'https://placehold.co/223x310/1a1a2e/8b5cf6?text=No+Image';
+                if (card.image_uris && card.image_uris[size]) return card.image_uris[size];
+                if (card.card_faces && card.card_faces.length > 0 && card.card_faces[0].image_uris && card.card_faces[0].image_uris[size]) return card.card_faces[0].image_uris[size];
+                return ph;
+            }
+
+            function renderManaCost(cost) {
+                if (!cost) return '';
+                const colors = { W:'#F9FAF4;color:#333', U:'#0E68AB;color:#fff', B:'#150B00;color:#fff', R:'#D3202A;color:#fff', G:'#00733E;color:#fff', C:'#CAC5C0;color:#333' };
+                return cost.replace(/\{([^}]+)\}/g, (_, sym) => {
+                    const bg = colors[sym] || '#CAC5C0;color:#333';
+                    return `<span class="mana-symbol" style="background:${bg}">${sym}</span>`;
+                });
+            }
+
+            // ===== SYNTHETIC PRICE HISTORY =====
+            function generateSyntheticHistory(currentPrice, days, cardId) {
+                let h = 0;
+                for (let i = 0; i < cardId.length; i++) {
+                    h = ((h << 5) - h) + cardId.charCodeAt(i);
+                    h |= 0;
+                }
+                let s = Math.abs(h) || 1;
+                function rand() {
+                    s = (s * 1103515245 + 12345) & 0x7fffffff;
+                    return s / 0x7fffffff;
+                }
+                const points = [currentPrice];
+                let price = currentPrice;
+                for (let i = 1; i <= days; i++) {
+                    const r = rand();
+                    const change = (r - 0.52) * 0.07;
+                    price = price / (1 + change);
+                    price = Math.max(0.01, price);
+                    points.unshift(price);
+                }
+                return points;
+            }
+
+            // ===== SPARKLINE =====
+            function renderSparkline(canvas, data, isPositive) {
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                const w = canvas.offsetWidth;
+                const h = canvas.offsetHeight;
+                canvas.width = w * dpr;
+                canvas.height = h * dpr;
+                ctx.scale(dpr, dpr);
+                const min = Math.min(...data);
+                const max = Math.max(...data);
+                const range = max - min || 1;
+                const color = isPositive ? '#22c55e' : '#ef4444';
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                data.forEach((v, i) => {
+                    const x = (i / (data.length - 1)) * w;
+                    const y = h - ((v - min) / range) * (h - 4) - 2;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+                ctx.lineTo(w, h);
+                ctx.lineTo(0, h);
+                ctx.closePath();
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, isPositive ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)');
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+
+            // ===== DETAIL PRICE CHART =====
+            let detailPriceChartInstance = null;
+
+            function showDetailPriceChart(fullHistory, days, currentPrice) {
+                const slice = fullHistory.slice(-(days + 1));
+                const startPrice = slice[0];
+                const change = startPrice > 0 ? ((currentPrice - startPrice) / startPrice * 100) : 0;
+                const isUp = change >= 0;
+                const high = Math.max(...slice);
+                const low = Math.min(...slice);
+                const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+                document.getElementById('detailCurrentPrice').textContent = '$' + currentPrice.toFixed(2);
+                const changeEl = document.getElementById('detailPriceChange');
+                changeEl.textContent = `${isUp ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`;
+                changeEl.className = `ml-2 text-sm font-mono ${isUp ? 'price-up' : 'price-down'}`;
+                document.getElementById('detailPriceHigh').textContent = '$' + high.toFixed(2);
+                document.getElementById('detailPriceLow').textContent = '$' + low.toFixed(2);
+                document.getElementById('detailPriceAvg').textContent = '$' + avg.toFixed(2);
+                const canvas = document.getElementById('detailPriceChart');
+                if (detailPriceChartInstance) detailPriceChartInstance.destroy();
+                const color = isUp ? '#22c55e' : '#ef4444';
+                const bgColor = isUp ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+                detailPriceChartInstance = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: slice.map((_, i) => i),
+                        datasets: [{ data: slice, borderColor: color, backgroundColor: bgColor, fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => '$' + ctx.raw.toFixed(2) } } },
+                        scales: {
+                            x: { display: false },
+                            y: { display: true, ticks: { color: '#475569', font: { size: 9 }, callback: v => '$' + v.toFixed(2) }, grid: { color: 'rgba(255,255,255,0.03)' } }
+                        },
+                        interaction: { intersect: false, mode: 'index' }
+                    }
+                });
+            }
+
+            // ===== CARD DETAIL =====
+            async function openCardDetail(card) {
+                const detailFlipInner = document.getElementById('detailFlipInner');
+                const detailFlipBtn = document.getElementById('detailFlipBtn');
+                detailFlipInner.classList.remove('flipped');
+                const isDfc = card.card_faces && card.card_faces.length >= 2 && card.card_faces[0].image_uris && card.card_faces[1].image_uris;
+                document.getElementById('detailCardName').textContent = card.name;
+                document.getElementById('detailCardImage').src = isDfc ? card.card_faces[0].image_uris.normal : getCardImage(card, 'normal');
+                if (isDfc) {
+                    document.getElementById('detailCardImageBack').src = card.card_faces[1].image_uris.normal;
+                    detailFlipBtn.classList.remove('hidden');
+                } else {
+                    detailFlipBtn.classList.add('hidden');
+                }
+                document.getElementById('detailTypeLine').textContent = isDfc ? card.card_faces[0].type_line : (card.type_line || '');
+                const manaCost = isDfc ? (card.card_faces[0].mana_cost || '') : (card.mana_cost || '');
+                document.getElementById('detailManaCost').innerHTML = renderManaCost(manaCost);
+                document.getElementById('detailOracleText').textContent = isDfc
+                    ? (card.card_faces[0].oracle_text || '') + '\n---\n' + (card.card_faces[1].oracle_text || '')
+                    : (card.oracle_text || '');
+
+                // Legalities
+                const legalEl = document.getElementById('detailLegalities');
+                legalEl.innerHTML = '';
+                if (card.legalities) {
+                    const fmtMap = {standard:'STD',modern:'MOD',commander:'CMD',pioneer:'PIO',legacy:'LEG',vintage:'VIN',pauper:'PAU',historic:'HIS',brawl:'BRL'};
+                    Object.entries(fmtMap).forEach(([k,v]) => {
+                        const status = card.legalities[k];
+                        let color = 'bg-white/5 text-slate-500 border-white/10';
+                        if (status === 'legal') color = 'bg-green-500/20 text-green-400 border-green-500/30';
+                        else if (status === 'restricted') color = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+                        else if (status === 'banned') color = 'bg-red-500/20 text-red-400 border-red-500/30';
+                        legalEl.innerHTML += `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${color}">${v}</span>`;
+                    });
+                }
+
+                // Rulings
+                const rulingsDiv = document.getElementById('detailRulings');
+                const rulingsList = document.getElementById('detailRulingsList');
+                rulingsDiv.classList.add('hidden');
+                rulingsList.innerHTML = '';
+                document.getElementById('cardDetailModal').classList.remove('hidden');
+
+                if (card.rulings_uri) {
+                    try {
+                        const resp = await fetch(card.rulings_uri);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            if (data.data && data.data.length > 0) {
+                                rulingsDiv.classList.remove('hidden');
+                                data.data.slice(0, 10).forEach(r => {
+                                    rulingsList.innerHTML += `<div class="p-2 bg-white/5 rounded text-xs text-slate-400"><span class="text-slate-600 mr-2">${r.published_at}</span>${r.comment}</div>`;
+                                });
+                            }
+                        }
+                    } catch (e) { /* non-critical */ }
+                }
+
+                // Price chart
+                const cardPrice = parseFloat(card.prices.usd) || 0;
+                const priceSection = document.getElementById('detailPriceSection');
+                if (cardPrice > 0) {
+                    priceSection.classList.remove('hidden');
+                    const fullHistory = generateSyntheticHistory(cardPrice, 365, card.id);
+                    let activeDays = 30;
+                    showDetailPriceChart(fullHistory, activeDays, cardPrice);
+                    document.querySelectorAll('#detailPriceSection .timeframe-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (parseInt(btn.dataset.days) === activeDays) btn.classList.add('active');
+                        btn.onclick = () => {
+                            activeDays = parseInt(btn.dataset.days);
+                            document.querySelectorAll('#detailPriceSection .timeframe-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            showDetailPriceChart(fullHistory, activeDays, cardPrice);
+                        };
+                    });
+                } else {
+                    priceSection.classList.add('hidden');
+                }
+            }
+
+            document.getElementById('closeCardDetailBtn').addEventListener('click', () => document.getElementById('cardDetailModal').classList.add('hidden'));
+            document.getElementById('detailFlipBtn').addEventListener('click', () => document.getElementById('detailFlipInner').classList.toggle('flipped'));
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') document.getElementById('cardDetailModal').classList.add('hidden');
+            });
+
+            // ===== LOAD MARKET DATA =====
+            let marketData = [];
+
+            async function loadMarket() {
+                try {
+                    const resp = await fetch('https://api.scryfall.com/cards/search?q=game%3Apaper+usd%3E3&unique=cards&order=usd&dir=desc');
+                    if (!resp.ok) throw new Error('API error');
+                    const data = await resp.json();
+                    const cards = (data.data || []).slice(0, 60).filter(c => parseFloat(c.prices.usd) > 0);
+
+                    marketData = cards.map(card => {
+                        const price = parseFloat(card.prices.usd) || 0;
+                        const history = generateSyntheticHistory(price, 365, card.id);
+                        const weekAgo = history[history.length - 8] || history[0];
+                        const weekChange = weekAgo > 0 ? ((price - weekAgo) / weekAgo * 100) : 0;
+                        const dayAgo = history[history.length - 2] || history[0];
+                        const dayChange = dayAgo > 0 ? ((price - dayAgo) / dayAgo * 100) : 0;
+                        return { card, price, history, weekChange, dayChange };
+                    });
+
+                    renderAll();
+                } catch (e) {
+                    document.getElementById('marketLoader').innerHTML = `<p class="text-red-400 font-mono">Failed to load: ${e.message}</p>`;
+                }
+            }
+
+            function renderAll() {
+                document.getElementById('marketLoader').classList.add('hidden');
+                document.getElementById('marketContent').classList.remove('hidden');
+
+                // Stats
+                const avgPrice = marketData.reduce((a, b) => a + b.price, 0) / marketData.length;
+                const topGainer = [...marketData].sort((a, b) => b.weekChange - a.weekChange)[0];
+                const highest = [...marketData].sort((a, b) => b.price - a.price)[0];
+                document.getElementById('statCards').textContent = marketData.length;
+                document.getElementById('statAvg').textContent = '$' + avgPrice.toFixed(2);
+                document.getElementById('statGainer').innerHTML = topGainer
+                    ? `${topGainer.card.name} <span class="price-up">▲${topGainer.weekChange.toFixed(1)}%</span>`
+                    : '--';
+                document.getElementById('statHighest').textContent = highest ? '$' + highest.price.toFixed(2) : '--';
+
+                // Ticker
+                const tickerTrack = document.getElementById('tickerTrack');
+                tickerTrack.innerHTML = '';
+                const tickerItems = marketData.slice(0, 25);
+                [...tickerItems, ...tickerItems].forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'ticker-item';
+                    const cc = item.dayChange >= 0 ? 'price-up' : 'price-down';
+                    const arrow = item.dayChange >= 0 ? '▲' : '▼';
+                    el.innerHTML = `<span class="text-slate-300">${item.card.name}</span><span class="text-slate-500">$${item.price.toFixed(2)}</span><span class="${cc}">${arrow}${Math.abs(item.dayChange).toFixed(1)}%</span>`;
+                    tickerTrack.appendChild(el);
+                });
+
+                // Gainers & Losers
+                const gainers = [...marketData].sort((a, b) => b.weekChange - a.weekChange).slice(0, 12);
+                const losers = [...marketData].sort((a, b) => a.weekChange - b.weekChange).slice(0, 12);
+                renderColumn('gainersColumn', gainers);
+                renderColumn('losersColumn', losers);
+
+                // Most Valuable (card tiles)
+                const valuable = [...marketData].sort((a, b) => b.price - a.price).slice(0, 10);
+                const vGrid = document.getElementById('valuableGrid');
+                vGrid.innerHTML = '';
+                valuable.forEach(item => {
+                    const change = item.weekChange;
+                    const cc = change >= 0 ? 'price-up' : 'price-down';
+                    const arrow = change >= 0 ? '▲' : '▼';
+                    const div = document.createElement('div');
+                    div.className = 'valuable-card';
+                    div.dataset.cardId = item.card.id;
+                    div.innerHTML = `
+                        <img src="${getCardImage(item.card, 'normal')}" class="w-full h-auto" onerror="this.onerror=null;this.src='https://placehold.co/223x310/1a1a2e/8b5cf6?text=No+Image';">
+                        <div class="p-3">
+                            <p class="text-xs font-semibold text-slate-200 truncate">${item.card.name}</p>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-sm font-bold font-mono text-slate-200">$${item.price.toFixed(2)}</span>
+                                <span class="text-xs font-mono ${cc}">${arrow}${Math.abs(change).toFixed(1)}%</span>
+                            </div>
+                            <canvas class="sparkline-canvas mt-2" data-history='${JSON.stringify(item.history.slice(-30))}' data-positive="${change >= 0}" style="width:100%;height:28px;"></canvas>
+                        </div>`;
+                    vGrid.appendChild(div);
+                });
+
+                // All Cards
+                const allSorted = [...marketData].sort((a, b) => b.price - a.price);
+                const table = document.getElementById('allCardsTable');
+                table.innerHTML = '';
+                allSorted.forEach((item, idx) => {
+                    const change = item.weekChange;
+                    const cc = change >= 0 ? 'price-up' : 'price-down';
+                    const arrow = change >= 0 ? '▲' : '▼';
+                    const img = getCardImage(item.card, 'small');
+                    const sparkData = item.history.slice(-30);
+                    const row = document.createElement('div');
+                    row.className = 'market-card-row';
+                    row.dataset.cardId = item.card.id;
+                    row.innerHTML = `
+                        <span class="text-xs font-mono text-slate-600 w-6 text-right flex-shrink-0">${idx + 1}</span>
+                        <div class="w-8 h-11 rounded bg-cover bg-center flex-shrink-0 border border-white/10" style="background-image:url('${img}')"></div>
+                        <div class="flex-grow min-w-0">
+                            <p class="text-sm font-semibold text-slate-200 truncate">${item.card.name}</p>
+                            <p class="text-[10px] font-mono text-slate-500">${(item.card.set || '').toUpperCase()} · ${item.card.rarity || ''}</p>
+                        </div>
+                        <canvas class="sparkline-canvas" data-history='${JSON.stringify(sparkData)}' data-positive="${change >= 0}" style="width:80px;height:32px;"></canvas>
+                        <div class="text-right flex-shrink-0 w-28">
+                            <p class="text-sm font-bold font-mono text-slate-200">$${item.price.toFixed(2)}</p>
+                            <p class="text-xs font-mono ${cc}">${arrow} ${Math.abs(change).toFixed(1)}%</p>
+                        </div>`;
+                    table.appendChild(row);
+                });
+
+                // Render all sparklines
+                requestAnimationFrame(() => {
+                    document.querySelectorAll('.sparkline-canvas').forEach(canvas => {
+                        const hd = JSON.parse(canvas.dataset.history);
+                        const pos = canvas.dataset.positive === 'true';
+                        renderSparkline(canvas, hd, pos);
+                    });
+                });
+            }
+
+            function renderColumn(containerId, items) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+                items.forEach(item => {
+                    const change = item.weekChange;
+                    const cc = change >= 0 ? 'price-up' : 'price-down';
+                    const arrow = change >= 0 ? '▲' : '▼';
+                    const img = getCardImage(item.card, 'small');
+                    const sparkData = item.history.slice(-30);
+                    const row = document.createElement('div');
+                    row.className = 'market-card-row';
+                    row.dataset.cardId = item.card.id;
+                    row.innerHTML = `
+                        <div class="w-8 h-11 rounded bg-cover bg-center flex-shrink-0 border border-white/10" style="background-image:url('${img}')"></div>
+                        <div class="flex-grow min-w-0">
+                            <p class="text-sm font-semibold text-slate-200 truncate">${item.card.name}</p>
+                            <p class="text-[10px] font-mono text-slate-500">${(item.card.set || '').toUpperCase()} · ${item.card.rarity || ''}</p>
+                        </div>
+                        <canvas class="sparkline-canvas" data-history='${JSON.stringify(sparkData)}' data-positive="${change >= 0}" style="width:80px;height:32px;"></canvas>
+                        <div class="text-right flex-shrink-0 w-24">
+                            <p class="text-sm font-bold font-mono text-slate-200">$${item.price.toFixed(2)}</p>
+                            <p class="text-xs font-mono ${cc}">${arrow}${Math.abs(change).toFixed(1)}%</p>
+                        </div>`;
+                    container.appendChild(row);
+                });
+            }
+
+            // Click delegation — open card detail from any card row or tile
+            document.addEventListener('click', (e) => {
+                const row = e.target.closest('.market-card-row') || e.target.closest('.valuable-card');
+                if (!row) return;
+                const cardId = row.dataset.cardId;
+                const item = marketData.find(d => d.card.id === cardId);
+                if (item) openCardDetail(item.card);
+            });
+
+            // Load on page ready
+            loadMarket();
+        });
+    </script>
+</body>
+</html>
